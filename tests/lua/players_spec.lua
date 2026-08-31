@@ -2,6 +2,7 @@ UP = {
     players = {},
     accountSources = {},
     pendingPlayers = {},
+    playerMutations = {},
     rateLimits = {},
     ready = true,
     Players = {},
