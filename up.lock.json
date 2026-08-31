@@ -1,6 +1,22 @@
 {
   "schemaVersion": 1,
   "release": "0.1.0-dev",
-  "generatedAt": "2026-08-30T00:00:00Z",
-  "dependencies": []
+  "generatedAt": "2026-08-31T00:00:00Z",
+  "dependencies": [
+    {
+      "name": "FXServer",
+      "version": "35245-6efb47dff473c0e2a12fb50b08d74c0eb24a50d5",
+      "sha256": "7cf7790295d8828163010ad8c4ea5c609feac4fbbfd315a33118ee1baa0f6220"
+    },
+    {
+      "name": "cfx-server-data",
+      "version": "32d98e7524b952faf8b220d719615b0346b0a6cc",
+      "sha256": "7a394dc03e0b0999dd13269ea471436b00e80dcdee974d7cd727ffaca95e733b"
+    },
+    {
+      "name": "oxmysql",
+      "version": "2.14.1",
+      "sha256": "29fa0992174257f548dc1ef8dc9431fd1ce995696b5c58fbe98ca0cb6a0e6aba"
+    }
+  ]
 }
