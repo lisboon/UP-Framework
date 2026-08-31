@@ -1,10 +1,6 @@
-import { EntryProvider } from '../providers/entry-provider'
-import { EntryExperience } from './entry-experience'
 
 export function App() {
   return (
-    <EntryProvider>
-      <EntryExperience />
-    </EntryProvider>
+    <div className="absolute inset-0 bg-black hidden"></div>
   )
 }
