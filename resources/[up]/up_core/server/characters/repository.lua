@@ -1,18 +1,5 @@
 UP.CharacterRepository = {}
 
-local function releaseSlot(accountId)
-    MySQL.update.await('UPDATE up_core_character_slots SET used = GREATEST(used - 1, 0) WHERE account_id = ?', { accountId })
-end
-
-local function reserveSlot(accountId)
-    MySQL.insert.await('INSERT IGNORE INTO up_core_character_slots (account_id, used) VALUES (?, 0)', { accountId })
-    local affected = MySQL.update.await(
-        'UPDATE up_core_character_slots SET used = used + 1 WHERE account_id = ? AND used < ?',
-        { accountId, UPConfig.character.maxPerAccount }
-    )
-    return affected > 0
-end
-
 function UP.CharacterRepository.listActive(accountId)
     return MySQL.query.await([[
         SELECT passport,
@@ -45,25 +32,33 @@ function UP.CharacterRepository.findActive(accountId, passport)
 end
 
 function UP.CharacterRepository.create(accountId, data)
-    if not reserveSlot(accountId) then return nil, 'character_limit_reached' end
-
     local characterId = MySQL.scalar.await('SELECT UUID()')
-    local allocationOK, passport = pcall(MySQL.insert.await, [[
-        INSERT INTO up_core_passport_allocations (character_id) VALUES (?)
-    ]], { characterId })
-    if not allocationOK or not passport then
-        releaseSlot(accountId)
-        return nil, 'passport_allocation_failed'
-    end
-
     local transactionOK, created = pcall(MySQL.transaction.await, {
+        {
+            query = [[
+                INSERT INTO up_core_character_slots (account_id, used)
+                VALUES (?, 1)
+                ON DUPLICATE KEY UPDATE
+                    used = IF(used < ?, used + 1, NULL)
+            ]],
+            values = { accountId, UPConfig.character.maxPerAccount }
+        },
+        {
+            query = 'INSERT INTO up_core_passport_allocations (character_id) VALUES (?)',
+            values = { characterId }
+        },
         {
             query = [[
                 INSERT INTO up_core_characters
                     (id, account_id, passport, first_name, last_name, birth_date, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                SELECT ?, ?, passport, ?, ?, ?, ?
+                  FROM up_core_passport_allocations
+                 WHERE character_id = ?
             ]],
-            values = { characterId, accountId, passport, data.firstName, data.lastName, data.birthDate, json.encode({}) }
+            values = {
+                characterId, accountId, data.firstName, data.lastName,
+                data.birthDate, json.encode({}), characterId
+            }
         },
         {
             query = "INSERT INTO up_core_character_roles (character_id, role_name, granted_by) VALUES (?, 'player', NULL)",
@@ -73,23 +68,55 @@ function UP.CharacterRepository.create(accountId, data)
             query = [[
                 INSERT INTO up_core_audit_log
                     (actor_account_id, action, subject_type, subject_id, metadata)
-                VALUES (?, 'character.created', 'character', ?, ?)
+                SELECT ?, 'character.created', 'character', ?, JSON_OBJECT('passport', passport)
+                  FROM up_core_passport_allocations
+                 WHERE character_id = ?
             ]],
-            values = { accountId, characterId, json.encode({ passport = passport }) }
+            values = { accountId, characterId, characterId }
         }
     })
 
     if not transactionOK or not created then
-        MySQL.update.await('DELETE FROM up_core_passport_allocations WHERE character_id = ?', { characterId })
-        releaseSlot(accountId)
+        local used = MySQL.scalar.await(
+            'SELECT used FROM up_core_character_slots WHERE account_id = ?',
+            { accountId }
+        )
+        if tonumber(used) and tonumber(used) >= UPConfig.character.maxPerAccount then
+            return nil, 'character_limit_reached'
+        end
         return nil, 'character_create_failed'
     end
-
-    return UP.CharacterRepository.findActive(accountId, passport)
+    return MySQL.single.await([[
+        SELECT id,
+               passport,
+               first_name AS firstName,
+               last_name AS lastName,
+               DATE_FORMAT(birth_date, '%Y-%m-%d') AS birthDate,
+               created_at AS createdAt,
+               updated_at AS updatedAt,
+               last_selected_at AS lastSelectedAt
+          FROM up_core_characters
+         WHERE id = ? AND account_id = ? AND status = 'active'
+         LIMIT 1
+    ]], { characterId, accountId })
 end
 
 function UP.CharacterRepository.softDelete(accountId, character)
     local transactionOK, deleted = pcall(MySQL.transaction.await, {
+        {
+            query = [[
+                INSERT INTO up_core_character_slots (account_id, used)
+                VALUES (
+                    IF(EXISTS(
+                        SELECT 1 FROM up_core_characters
+                         WHERE id = ? AND account_id = ? AND status = 'active'
+                    ), ?, NULL),
+                    0
+                )
+                ON DUPLICATE KEY UPDATE used = used
+            ]],
+            values = { character.id, accountId, accountId }
+        },
         {
             query = [[
                 UPDATE up_core_characters
@@ -114,10 +141,38 @@ function UP.CharacterRepository.softDelete(accountId, character)
     return transactionOK and deleted
 end
 
-function UP.CharacterRepository.markSelected(characterId)
-    return MySQL.update.await([[
-        UPDATE up_core_characters
-           SET last_selected_at = CURRENT_TIMESTAMP(6), version = version + 1
-         WHERE id = ? AND status = 'active'
-    ]], { characterId })
+function UP.CharacterRepository.select(accountId, character)
+    local transactionOK, selected = pcall(MySQL.transaction.await, {
+        {
+            query = [[
+                INSERT INTO up_core_character_slots (account_id, used)
+                VALUES (
+                    IF(EXISTS(
+                        SELECT 1 FROM up_core_characters
+                         WHERE id = ? AND account_id = ? AND status = 'active'
+                    ), ?, NULL),
+                    0
+                )
+                ON DUPLICATE KEY UPDATE used = used
+            ]],
+            values = { character.id, accountId, accountId }
+        },
+        {
+            query = [[
+                UPDATE up_core_characters
+                   SET last_selected_at = CURRENT_TIMESTAMP(6), version = version + 1
+                 WHERE id = ? AND account_id = ? AND status = 'active'
+            ]],
+            values = { character.id, accountId }
+        },
+        {
+            query = [[
+                INSERT INTO up_core_audit_log
+                    (actor_account_id, action, subject_type, subject_id, metadata)
+                VALUES (?, 'character.selected', 'character', ?, ?)
+            ]],
+            values = { accountId, character.id, json.encode({ passport = character.passport }) }
+        }
+    })
+    return transactionOK and selected
 end

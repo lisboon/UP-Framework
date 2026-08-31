@@ -41,6 +41,8 @@ jobs:
           docker compose -f infra/compose.dev.yml exec -T mysql \
             mysql -uup -pup-local-only up < tests/sql/character_lifecycle.sql
           docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uup -pup-local-only up < tests/sql/character_transactions.sql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
             mysql -uup -pup-local-only up < tests/sql/identity_security.sql
           docker compose -f infra/compose.dev.yml exec -T mysql \
             mysql -uroot -proot-local-only -e "CREATE DATABASE up_upgrade CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

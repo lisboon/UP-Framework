@@ -1,7 +1,8 @@
 UP = {
     Players = {},
     CharacterRepository = {},
-    characterMutations = {}
+    characterMutations = {},
+    playerMutations = {}
 }
 UPContracts = {
     events = {
@@ -18,8 +19,8 @@ function UP.Players.get()
     return player
 end
 
-function UP.Players.activateCharacter(_, passport)
-    return true, { passport = passport, characterId = 'character-1' }
+function UP.Players.activateCharacter(_, character)
+    return true, { passport = character.passport, characterId = character.id }
 end
 
 function UP.CharacterRepository.listActive()
@@ -56,9 +57,9 @@ function UP.CharacterRepository.softDelete()
     return true
 end
 
-function UP.CharacterRepository.markSelected(characterId)
-    selectedId = characterId
-    return 1
+function UP.CharacterRepository.select(_, character)
+    selectedId = character.id
+    return true
 end
 
 function TriggerEvent(name, _, payload)
@@ -96,3 +97,16 @@ assert(emitted[#emitted].name == 'deleted')
 local selected = assert(UP.Characters.select(1, 1000))
 assert(selected.passport == 1000)
 assert(selectedId == 'character-1')
+assert(UP.playerMutations[1] == nil)
+
+UP.playerMutations[1] = true
+local busy, busyError = UP.Characters.select(1, 1000)
+assert(busy == nil and busyError == 'player_busy')
+UP.playerMutations[1] = nil
+
+local originalFindActive = UP.CharacterRepository.findActive
+UP.CharacterRepository.findActive = function() error('database unavailable') end
+local failed, failedError = UP.Characters.select(1, 1000)
+assert(failed == nil and failedError == 'character_select_failed')
+assert(UP.playerMutations[1] == nil)
+UP.CharacterRepository.findActive = originalFindActive
