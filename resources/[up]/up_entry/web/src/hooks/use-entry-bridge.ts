@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { nuiRequest } from '../../../shared/services/nuiClient'
-import { isEntryMessage, UI_PROTOCOL_VERSION } from '../model/entryContract'
-import type { EntryStateAction } from '../model/entryReducer'
+import { nuiRequest } from '../services/nui-client'
+import { isEntryMessage, UI_PROTOCOL_VERSION } from '../types/entry'
+import type { EntryStateAction } from '../types/entry'
 
 export function useEntryBridge(dispatch: React.Dispatch<EntryStateAction>) {
   useEffect(() => {

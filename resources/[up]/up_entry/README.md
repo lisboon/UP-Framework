@@ -16,7 +16,24 @@ Client synchronization is event-driven. Resource restart triggers a new `clientR
 
 The NUI uses a separate versioned protocol. Lua owns entry lifecycle and sends presentation commands; the web layer renders them and cannot authorize character or spawn operations. Install dependencies and build from `web/`; the generated `web/dist` is tracked because a deployed FiveM resource cannot assume a Node.js toolchain.
 
-Character presentation is organized by domain under `web/src/features/entry`. Its provider coordinates loading and mutations, services own NUI transport, the model owns protocol state, and components remain presentation-focused. Character constraints come from `up_core`; the browser never owns slot, identity, deletion, or selection authority.
+Character presentation follows a layered layout under `web/src`:
+
+```text
+web/src/
+├── app/                  # composition root: App, view switcher and flow tests
+├── components/
+│   ├── arrival/          # arrival screen (location selection)
+│   ├── character/        # character screen, list and dialogs
+│   ├── layout/           # transient shell (loading, spawning, error)
+│   └── ui/               # reusable primitives (dialog frame)
+├── hooks/                # React hooks (NUI message bridge)
+├── providers/            # context, provider and entry reducer
+├── services/             # NUI transport and character/spawn services
+├── types/                # versioned NUI protocol and state contracts
+└── styles/               # global stylesheet
+```
+
+Files use kebab-case; exported components use PascalCase with named exports. `app/` and screens stay composition-only: the provider coordinates loading and mutations, the reducer owns protocol state, services own NUI transport, and components remain presentation-focused. There is no `lib/` layer because no shared utility emerged; single-consumer helpers stay co-located with their consumer. Character constraints come from `up_core`; the browser never owns slot, identity, deletion, or selection authority.
 
 ```text
 npm --prefix resources/[up]/up_entry/web ci

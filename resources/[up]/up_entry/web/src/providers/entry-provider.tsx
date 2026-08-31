@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
-import { UI_PROTOCOL_VERSION } from '../model/entryContract'
-import { useEntryBridge } from '../hooks/useEntryBridge'
-import { initialEntryState, reduceEntry } from '../model/entryReducer'
-import { characterService } from '../services/characterService'
-import { spawnService } from '../services/spawnService'
-import { EntryContext } from './entryContext'
-import type { EntryContextValue } from './entryContext'
+import { UI_PROTOCOL_VERSION } from '../types/entry'
+import { useEntryBridge } from '../hooks/use-entry-bridge'
+import { initialEntryState, reduceEntry } from './entry-reducer'
+import { characterService } from '../services/character-service'
+import { spawnService } from '../services/spawn-service'
+import { EntryContext } from './entry-context'
+import type { EntryContextValue } from './entry-context'
 
 const errorMessages: Record<string, string> = {
   timeout: 'O servidor demorou para responder. Tente novamente.',

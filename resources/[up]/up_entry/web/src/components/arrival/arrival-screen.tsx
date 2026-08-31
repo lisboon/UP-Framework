@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useEntry } from '../providers/entryContext'
+import { useEntry } from '../../providers/entry-context'
 
-export function ArrivalExperience() {
+export function ArrivalScreen() {
   const { previewLocation, selectLocation, state } = useEntry()
   const [activeId, setActiveId] = useState<string | undefined>(state.locations[0]?.id)
   const activeLocation = state.locations.find(({ id }) => id === activeId)

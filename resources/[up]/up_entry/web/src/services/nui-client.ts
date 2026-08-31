@@ -1,3 +1,10 @@
+export interface NuiResponse<T> {
+  version: number
+  ok: boolean
+  result?: T
+  error?: string
+}
+
 export async function nuiRequest<T>(event: string, payload: object): Promise<T | undefined> {
   if (typeof window.GetParentResourceName !== 'function') return undefined
   try {

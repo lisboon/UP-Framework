@@ -1,13 +1,7 @@
-import { nuiRequest } from '../../../shared/services/nuiClient'
-import { UI_PROTOCOL_VERSION } from '../model/entryContract'
-import type { Character, CharacterConstraints, CharacterDraft } from '../model/entryReducer'
-
-interface NuiResponse<T> {
-  version: number
-  ok: boolean
-  result?: T
-  error?: string
-}
+import { nuiRequest } from './nui-client'
+import type { NuiResponse } from './nui-client'
+import { UI_PROTOCOL_VERSION } from '../types/entry'
+import type { Character, CharacterConstraints, CharacterDraft } from '../types/entry'
 
 export interface CharacterBootstrap {
   characters: Character[]

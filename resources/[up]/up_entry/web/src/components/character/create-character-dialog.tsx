@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import type { CharacterConstraints, CharacterDraft } from '../model/entryReducer'
-import { useEntry } from '../providers/entryContext'
-import { DialogFrame } from './DialogFrame'
+import type { CharacterConstraints, CharacterDraft } from '../../types/entry'
+import { useEntry } from '../../providers/entry-context'
+import { DialogFrame } from '../ui/dialog-frame'
 
 interface CreateCharacterDialogProps {
   constraints: CharacterConstraints

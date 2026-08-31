@@ -1,4 +1,4 @@
-import type { EntryState } from '../model/entryReducer'
+import type { EntryState } from '../../types/entry'
 
 interface EntryShellProps {
   state: EntryState

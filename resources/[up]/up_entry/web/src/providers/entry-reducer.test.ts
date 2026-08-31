@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { UI_PROTOCOL_VERSION, isEntryMessage } from './entryContract'
-import { initialEntryState, reduceEntry } from './entryReducer'
+import { UI_PROTOCOL_VERSION, isEntryMessage } from '../types/entry'
+import { initialEntryState, reduceEntry } from './entry-reducer'
 
 describe('entry protocol', () => {
   it('rejects unsupported and unknown messages', () => {

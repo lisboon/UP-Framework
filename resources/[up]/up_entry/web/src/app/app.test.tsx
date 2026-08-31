@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Character } from '../features/entry/model/entryReducer'
-import { App } from './App'
+import type { Character } from '../types/entry'
+import { App } from './app'
 
 const constraints = {
   firstNameMinLength: 2,

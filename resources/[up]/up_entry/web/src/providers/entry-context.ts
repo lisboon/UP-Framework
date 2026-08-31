@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { Character, CharacterDraft, EntryState } from '../model/entryReducer'
+import type { Character, CharacterDraft, EntryState } from '../types/entry'
 
 export interface EntryContextValue {
   state: EntryState

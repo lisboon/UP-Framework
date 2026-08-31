@@ -1,6 +1,6 @@
-import type { Character } from '../model/entryReducer'
-import { useEntry } from '../providers/entryContext'
-import { DialogFrame } from './DialogFrame'
+import type { Character } from '../../types/entry'
+import { useEntry } from '../../providers/entry-context'
+import { DialogFrame } from '../ui/dialog-frame'
 
 interface DeleteCharacterDialogProps { character: Character }
 

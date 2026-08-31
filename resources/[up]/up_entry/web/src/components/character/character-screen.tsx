@@ -1,19 +1,15 @@
-import { CharacterList } from './CharacterList'
-import { CreateCharacterDialog } from './CreateCharacterDialog'
-import { DeleteCharacterDialog } from './DeleteCharacterDialog'
-import { EntryShell } from './EntryShell'
-import { ArrivalExperience } from './ArrivalExperience'
-import { useEntry } from '../providers/entryContext'
+import type { CharacterConstraints } from '../../types/entry'
+import { useEntry } from '../../providers/entry-context'
+import { CharacterList } from './character-list'
+import { CreateCharacterDialog } from './create-character-dialog'
+import { DeleteCharacterDialog } from './delete-character-dialog'
 
-export function CharacterExperience() {
-  const { state, openCreate, retry } = useEntry()
+interface CharacterScreenProps {
+  constraints: CharacterConstraints
+}
 
-  if (state.view === 'hidden') return null
-  if (state.view === 'arrival') return <ArrivalExperience />
-  if (state.view !== 'ready') return <EntryShell state={state} onRetry={retry} />
-
-  const constraints = state.constraints
-  if (!constraints) return <EntryShell state={{ ...state, view: 'error', error: 'Configuração de personagens indisponível.' }} onRetry={retry} />
+export function CharacterScreen({ constraints }: CharacterScreenProps) {
+  const { state, openCreate } = useEntry()
   const hasSlot = state.characters.length < constraints.maxPerAccount
 
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Character } from '../model/entryReducer'
-import { useEntry } from '../providers/entryContext'
+import type { Character } from '../../types/entry'
+import { useEntry } from '../../providers/entry-context'
 
 interface CharacterListProps {
   characters: Character[]

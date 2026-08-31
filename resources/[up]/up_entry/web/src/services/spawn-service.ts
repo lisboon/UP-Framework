@@ -1,13 +1,7 @@
-import { nuiRequest } from '../../../shared/services/nuiClient'
-import { UI_PROTOCOL_VERSION } from '../model/entryContract'
-import type { SpawnLocation } from '../model/entryReducer'
-
-interface NuiResponse<T> {
-  version: number
-  ok: boolean
-  result?: T
-  error?: string
-}
+import { nuiRequest } from './nui-client'
+import type { NuiResponse } from './nui-client'
+import { UI_PROTOCOL_VERSION } from '../types/entry'
+import type { SpawnLocation } from '../types/entry'
 
 const previewLocations: SpawnLocation[] = [
   { id: 'airport', label: 'Aeroporto Internacional de Los Santos' },
