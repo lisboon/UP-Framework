@@ -27,4 +27,5 @@ func TestDeploymentContract(t *testing.T) {
 	assertContains("common.cfg", "ensure oxmysql", "ensure [up]", "exec permissions.cfg")
 	assertContains("recipe.yaml", "$engine: 3", "connect_database", "query_database", "resources/[up]", "resources/[up-scripts]")
 	assertContains("recipe.yaml", "0001_core.sql", "0002_character_lifecycle.sql")
+	assertContains("resources/[up]/up_entry/fxmanifest.lua", "dependency 'up_core'", "server/session.lua", "client/session.lua")
 }
