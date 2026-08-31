@@ -4,6 +4,7 @@ UP.players = UP.players or {}
 UP.callbacks = UP.callbacks or {}
 UP.rateLimits = UP.rateLimits or {}
 UP.characterMutations = UP.characterMutations or {}
+UP.pendingPlayers = UP.pendingPlayers or {}
 UP.ready = false
 
 local function requireDatabase()
@@ -35,6 +36,13 @@ MySQL.ready(function()
         UPContracts.version,
         UPConfig.schemaVersion
     ))
+
+    for _, playerId in ipairs(GetPlayers()) do
+        local source = tonumber(playerId)
+        if source and not UP.players[source] then
+            DropPlayer(source, 'UP core restarted. Please reconnect.')
+        end
+    end
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
@@ -44,4 +52,5 @@ AddEventHandler('onResourceStop', function(resourceName)
     UP.players = {}
     UP.rateLimits = {}
     UP.characterMutations = {}
+    UP.pendingPlayers = {}
 end)
