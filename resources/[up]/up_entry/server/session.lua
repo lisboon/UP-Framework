@@ -129,6 +129,6 @@ AddEventHandler('onResourceStop', function(resourceName)
     UPEntry.sessions = {}
 end)
 
-exports('GetEntryState', function(source)
-    return UPEntry.sessions[tonumber(source)]
+exports('IsInEntry', function(source)
+    return UPEntry.sessions[tonumber(source)] ~= nil
 end)

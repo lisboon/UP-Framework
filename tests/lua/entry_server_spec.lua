@@ -88,7 +88,8 @@ function Player(source)
 end
 
 dofile('resources/[up]/up_entry/server/session.lua')
-assert(registeredExport.name == 'GetEntryState')
+assert(registeredExport.name == 'IsInEntry')
+assert(registeredExport.handler(42) == false)
 
 handlers[UPEntryContracts.coreEvents.playerLoaded](42)
 assert(UPEntry.sessions[42].bucket == 100042)
@@ -97,6 +98,7 @@ assert(lockdown.bucket == 100042 and lockdown.mode == 'strict')
 assert(population.bucket == 100042 and population.enabled == false)
 assert(clientEvent.name == UPEntryContracts.events.entered)
 assert(entryState.key == 'up:entry' and entryState.value == true and entryState.replicated == true)
+assert(registeredExport.handler(42) == true)
 
 local existing = assert(UPEntry.enter(42))
 assert(existing == UPEntry.sessions[42])
@@ -106,6 +108,7 @@ assert(UPEntry.sessions[42] == nil)
 assert(buckets[42] == 0)
 assert(clientEvent.name == UPEntryContracts.events.left)
 assert(entryState.value == false)
+assert(registeredExport.handler(42) == false)
 assert(UPEntry.leave(42) == false)
 
 UPEntry.sessions[42] = { bucket = 100042 }
