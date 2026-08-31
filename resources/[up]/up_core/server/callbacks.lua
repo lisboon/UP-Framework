@@ -46,7 +46,7 @@ RegisterNetEvent(UPContracts.events.callbackRequest, function(envelope)
         return
     end
 
-    local ok, result = xpcall(function()
+    local ok, result, handlerError = xpcall(function()
         return handler(source, envelope.payload, player)
     end, debug.traceback)
 
@@ -57,6 +57,16 @@ RegisterNetEvent(UPContracts.events.callbackRequest, function(envelope)
             requestId = envelope.requestId,
             ok = false,
             error = 'internal_error'
+        })
+        return
+    end
+
+    if handlerError then
+        TriggerClientEvent(UPContracts.events.callbackResponse, source, {
+            version = UPContracts.version,
+            requestId = envelope.requestId,
+            ok = false,
+            error = handlerError
         })
         return
     end

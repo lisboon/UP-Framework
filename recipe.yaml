@@ -44,5 +44,8 @@ tasks:
   - action: query_database
     file: ./tmp/up/database/migrations/0001_core.sql
 
+  - action: query_database
+    file: ./tmp/up/database/migrations/0002_character_lifecycle.sql
+
   - action: remove_path
     path: ./tmp/up

@@ -12,7 +12,6 @@ Foundation / walking skeleton. Not ready for production or sale.
 - `database/migrations`: forward-compatible MySQL 8 migrations.
 - `cmd/upctl`: cross-platform release and diagnostics CLI written in Go.
 - `infra`: reproducible Linux/MySQL reference environment.
-- `docs`: architecture, clean-room, security, support, and licensing decisions.
 - `sbom`: allowlisted third-party dependencies and their provenance.
 
 ## Quick checks

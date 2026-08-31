@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Wendel Lisboa'
 description 'UP clean-room roleplay core'
-version '0.0.1-dev'
+version '0.1.0-dev'
 license 'Apache-2.0'
 
 lua54 'yes'
@@ -21,6 +21,7 @@ server_scripts {
     'server/permissions.lua',
     'server/players.lua',
     'server/callbacks.lua',
+    'server/characters.lua',
     'server/exports.lua'
 }
 

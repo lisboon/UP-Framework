@@ -26,4 +26,5 @@ func TestDeploymentContract(t *testing.T) {
 	assertContains("server.local.cfg.example", "endpoint_add_tcp", "identifier.fivem:replace-me", "exec common.cfg")
 	assertContains("common.cfg", "ensure oxmysql", "ensure up_core", "exec permissions.cfg")
 	assertContains("recipe.yaml", "$engine: 3", "connect_database", "query_database", "resources/[up]")
+	assertContains("recipe.yaml", "0001_core.sql", "0002_character_lifecycle.sql")
 }

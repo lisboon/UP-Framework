@@ -110,6 +110,7 @@ function UP.Players.activateCharacter(source, passport)
 
     local player = UP.players[source]
     if not player then return false, 'player_not_loaded' end
+    if player.characterId then return false, 'character_already_active' end
 
     local character = MySQL.single.await([[
         SELECT id, passport, status

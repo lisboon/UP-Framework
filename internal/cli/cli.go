@@ -129,7 +129,7 @@ txadmin_port = 40120
 
 const defaultLock = `{
   "schemaVersion": 1,
-  "release": "0.0.0-dev",
+  "release": "0.1.0-dev",
   "dependencies": []
 }
 `

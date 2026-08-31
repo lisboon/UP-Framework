@@ -3,6 +3,7 @@ UP = rawget(_G, 'UP') or {}
 UP.players = UP.players or {}
 UP.callbacks = UP.callbacks or {}
 UP.rateLimits = UP.rateLimits or {}
+UP.characterMutations = UP.characterMutations or {}
 UP.ready = false
 
 local function requireDatabase()
@@ -21,7 +22,7 @@ local function verifySchema()
         error('UP database is not migrated; run upctl doctor and apply migrations')
     end
 
-    if tonumber(migration) < 1 then
+    if tonumber(migration) < UPConfig.schemaVersion then
         error(('UP schema version is unsupported: %s'):format(migration))
     end
 end
@@ -30,7 +31,10 @@ MySQL.ready(function()
     requireDatabase()
     verifySchema()
     UP.ready = true
-    print('^2[up_core]^7 ready (contract v1, schema >= 1)')
+    print(('^2[up_core]^7 ready (contract v%s, schema v%s)'):format(
+        UPContracts.version,
+        UPConfig.schemaVersion
+    ))
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
@@ -39,4 +43,5 @@ AddEventHandler('onResourceStop', function(resourceName)
     UP.ready = false
     UP.players = {}
     UP.rateLimits = {}
+    UP.characterMutations = {}
 end)

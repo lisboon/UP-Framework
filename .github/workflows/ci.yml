@@ -29,6 +29,7 @@ jobs:
           LUA_COMPILER="$(command -v luac5.4 || command -v luac)"
           test -n "$LUA_COMPILER"
           find 'resources/[up]/up_core' -name '*.lua' -print0 | xargs -0 -n1 "$LUA_COMPILER" -p
+          lua5.4 tests/lua/validation_spec.lua
       - name: Compose validation
         run: docker compose -f infra/compose.dev.yml config
       - name: MySQL migration integration
@@ -36,7 +37,19 @@ jobs:
           docker compose -f infra/compose.dev.yml up -d --wait mysql
           docker compose -f infra/compose.dev.yml exec -T mysql \
             mysql -uup -pup-local-only up \
-            -e "SELECT version, name FROM up_core_schema_migrations WHERE version = 1;"
+            -e "SELECT version, name FROM up_core_schema_migrations WHERE version IN (1, 2) ORDER BY version;"
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uup -pup-local-only up < tests/sql/character_lifecycle.sql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uroot -proot-local-only -e "CREATE DATABASE up_upgrade CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uroot -proot-local-only up_upgrade < database/migrations/0001_core.sql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uroot -proot-local-only up_upgrade < tests/sql/upgrade_v1_fixture.sql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uroot -proot-local-only up_upgrade < database/migrations/0002_character_lifecycle.sql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uroot -proot-local-only up_upgrade < tests/sql/upgrade_v2_assertions.sql
       - name: Compose cleanup
         if: always()
         run: docker compose -f infra/compose.dev.yml down -v
