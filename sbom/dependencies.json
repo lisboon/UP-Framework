@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "policy": "Only dependencies with a verified upstream, immutable version, checksum, and compatible license may enter a release lockfile.",
+  "allowlist": [
+    {
+      "name": "FXServer",
+      "role": "runtime",
+      "source": "https://runtime.fivem.net/artifacts/fivem/",
+      "license": "Cfx.re Platform License Agreement",
+      "bundled": false,
+      "notes": "Downloaded by the operator. Requires an operator-owned Cfx license key."
+    },
+    {
+      "name": "oxmysql",
+      "role": "mysql-driver",
+      "source": "https://github.com/overextended/oxmysql",
+      "license": "LGPL-3.0",
+      "bundled": false,
+      "notes": "Pin an official release and checksum after legal review."
+    },
+    {
+      "name": "ox_lib",
+      "role": "optional-utility-adapter",
+      "source": "https://github.com/overextended/ox_lib",
+      "license": "LGPL-3.0",
+      "bundled": false,
+      "notes": "Optional adapter dependency; never call undocumented internals."
+    },
+    {
+      "name": "ox_inventory",
+      "role": "optional-inventory-adapter",
+      "source": "https://github.com/overextended/ox_inventory",
+      "license": "GPL-3.0",
+      "bundled": false,
+      "notes": "Install separately from the official release. Adapter licensing requires legal review."
+    }
+  ],
+  "prohibited": [
+    "Creative Network snapshot files",
+    "leaked or entitlement-bypassed assets",
+    "real-world branded vehicles or unlicensed third-party IP",
+    "dependencies without an explicit redistribution grant"
+  ]
+}
+

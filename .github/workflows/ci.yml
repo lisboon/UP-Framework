@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Go format
+        run: test -z "$(gofmt -l .)"
+      - name: Go tests
+        run: go test ./...
+      - name: Go build
+        run: go build ./cmd/upctl
+      - name: Lua syntax
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+          LUA_COMPILER="$(command -v luac5.4 || command -v luac)"
+          test -n "$LUA_COMPILER"
+          find 'resources/[system]/up_core' -name '*.lua' -print0 | xargs -0 -n1 "$LUA_COMPILER" -p
+      - name: Compose validation
+        run: docker compose -f infra/compose.dev.yml config
+      - name: MySQL migration integration
+        run: |
+          docker compose -f infra/compose.dev.yml up -d --wait mysql
+          docker compose -f infra/compose.dev.yml exec -T mysql \
+            mysql -uup -pup-local-only up \
+            -e "SELECT version, name FROM up_core_schema_migrations WHERE version = 1;"
+      - name: Compose cleanup
+        if: always()
+        run: docker compose -f infra/compose.dev.yml down -v

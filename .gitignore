@@ -1,0 +1,12 @@
+.env
+.idea/
+.vscode/
+bin/
+dist/
+coverage/
+txData/
+mysql-data/
+*.log
+*.bak
+upctl.exe
+upctl-legacy.exe

@@ -1,0 +1,10 @@
+schema_version = 1
+environment = "development"
+server_name = "UP Development"
+server_data_path = "./server-data"
+mysql_host = "127.0.0.1"
+mysql_port = 3307
+mysql_database = "up"
+fxserver_tcp_port = 30120
+fxserver_udp_port = 30120
+txadmin_port = 40120
