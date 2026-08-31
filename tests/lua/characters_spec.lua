@@ -66,8 +66,8 @@ function TriggerEvent(name, _, payload)
 end
 
 dofile('resources/[up]/up_core/shared/config.lua')
-dofile('resources/[up]/up_core/server/validation.lua')
-dofile('resources/[up]/up_core/server/characters.lua')
+dofile('resources/[up]/up_core/server/core/validation.lua')
+dofile('resources/[up]/up_core/server/characters/service.lua')
 
 local characters = assert(UP.Characters.list(1))
 assert(#characters == 1)

@@ -1,7 +1,7 @@
 UP = {}
 
 dofile('resources/[up]/up_core/shared/config.lua')
-dofile('resources/[up]/up_core/server/validation.lua')
+dofile('resources/[up]/up_core/server/core/validation.lua')
 
 assert(UP.Validation.characterName('  Ana   Maria  ', 2, 32) == 'Ana Maria')
 assert(UP.Validation.characterName('João', 2, 32) == 'João')

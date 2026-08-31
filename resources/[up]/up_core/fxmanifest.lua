@@ -15,21 +15,21 @@ shared_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/bootstrap.lua',
-    'server/validation.lua',
-    'server/identifiers.lua',
-    'server/permissions.lua',
-    'server/players.lua',
-    'server/callbacks.lua',
-    'server/character_repository.lua',
-    'server/characters.lua',
-    'server/character_callbacks.lua',
-    'server/exports.lua'
+    'server/core/bootstrap.lua',
+    'server/core/validation.lua',
+    'server/core/identifiers.lua',
+    'server/core/permissions.lua',
+    'server/core/players.lua',
+    'server/core/callbacks.lua',
+    'server/characters/repository.lua',
+    'server/characters/service.lua',
+    'server/characters/callbacks.lua',
+    'server/core/exports.lua'
 }
 
 client_scripts {
-    'client/callbacks.lua',
-    'client/main.lua'
+    'client/core/callbacks.lua',
+    'client/core/state.lua'
 }
 
 dependencies {

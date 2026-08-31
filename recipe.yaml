@@ -19,7 +19,7 @@ tasks:
     dest: ./resources/[ox]/oxmysql
 
   - action: download_github
-    src: https://github.com/lisboon/product
+    src: https://github.com/lisboon/UP-Framework
     ref: feat/up-foundation
     dest: ./tmp/up
 
@@ -38,6 +38,10 @@ tasks:
   - action: move_path
     src: ./tmp/up/resources/[up]
     dest: ./resources/[up]
+
+  - action: move_path
+    src: ./tmp/up/resources/[up-scripts]
+    dest: ./resources/[up-scripts]
 
   - action: connect_database
 
