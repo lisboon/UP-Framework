@@ -31,6 +31,14 @@ exports('SelectCharacter', function(source, passport)
     return UP.Characters.select(source, passport)
 end)
 
+exports('ListSpawnLocations', function(source)
+    return UP.Spawns.list(source)
+end)
+
+exports('SelectSpawnLocation', function(source, payload)
+    return UP.Spawns.select(source, payload)
+end)
+
 exports('IsReady', function()
     return UP.ready
 end)

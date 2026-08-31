@@ -26,16 +26,20 @@ server_scripts {
     'server/characters/repository.lua',
     'server/characters/service.lua',
     'server/characters/callbacks.lua',
+    'server/spawn/service.lua',
+    'server/spawn/callbacks.lua',
     'server/core/exports.lua'
 }
 
 client_scripts {
     'client/core/callbacks.lua',
-    'client/core/state.lua'
+    'client/core/state.lua',
+    'client/spawn/session.lua'
 }
 
 dependencies {
     '/server:8450',
     '/onesync',
-    'oxmysql'
+    'oxmysql',
+    'spawnmanager'
 }

@@ -50,7 +50,7 @@ function UP.CharacterRepository.create(_, data)
 end
 
 function UP.CharacterRepository.findActive(_, passport)
-    return { id = 'character-1', passport = passport }
+    return { id = 'character-1', passport = passport, version = 1 }
 end
 
 function UP.CharacterRepository.softDelete()
@@ -98,6 +98,13 @@ local selected = assert(UP.Characters.select(1, 1000))
 assert(selected.passport == 1000)
 assert(selectedId == 'character-1')
 assert(UP.playerMutations[1] == nil)
+assert(UP.characterMutations['character-1'] == nil)
+
+player.characterId = nil
+UP.characterMutations['character-1'] = true
+local characterBusy, characterBusyError = UP.Characters.select(1, 1000)
+assert(characterBusy == nil and characterBusyError == 'character_busy')
+UP.characterMutations['character-1'] = nil
 
 UP.playerMutations[1] = true
 local busy, busyError = UP.Characters.select(1, 1000)

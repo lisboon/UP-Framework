@@ -24,6 +24,21 @@ local function reject(matches, identifiers, reason)
     return nil, reason
 end
 
+local function attachIdentifiers(account, identifiers)
+    local executed, attached = pcall(UP.IdentityRepository.attach, account.id, identifiers)
+    if executed and attached then return account end
+
+    local verified, refreshed = pcall(UP.IdentityRepository.findAssociations, identifiers)
+    if verified then
+        for _, match in ipairs(refreshed) do
+            if match.accountId ~= account.id then
+                return reject(refreshed, identifiers, 'identity_conflict')
+            end
+        end
+    end
+    return nil, 'identity_attach_failed'
+end
+
 function UP.Identity.resolve(source)
     local identifiers = UP.Identifiers.collect(source)
     local primary = UP.Identifiers.primary(identifiers)
@@ -59,8 +74,5 @@ function UP.Identity.resolve(source)
     end
 
     if not account then return nil, 'account_not_found' end
-    if not UP.IdentityRepository.attach(account.id, identifiers) then
-        return reject(matches, identifiers, 'identity_conflict')
-    end
-    return account
+    return attachIdentifiers(account, identifiers)
 end

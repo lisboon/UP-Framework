@@ -7,6 +7,7 @@ local identifiers
 local matches
 local createdAccount
 local attached = true
+local attachConflict = false
 local auditedReason
 
 function UP.Identifiers.collect()
@@ -32,6 +33,9 @@ function UP.IdentityRepository.createAccount()
 end
 
 function UP.IdentityRepository.attach()
+    if attachConflict then
+        matches = { { accountId = 'account-2', authoritative = true } }
+    end
     return attached
 end
 
@@ -77,11 +81,20 @@ assert(rejected == nil and err == 'identity_verification_required')
 
 matches = { { accountId = 'account-1', authoritative = true } }
 attached = false
+auditedReason = nil
+rejected, err = UP.Identity.resolve(1)
+assert(rejected == nil and err == 'identity_attach_failed')
+assert(auditedReason == nil)
+
+matches = { { accountId = 'account-1', authoritative = true } }
+attachConflict = true
 rejected, err = UP.Identity.resolve(1)
 assert(rejected == nil and err == 'identity_conflict')
+assert(auditedReason == 'identity_conflict')
 
 identifiers = { authoritative('fivem', '12345') }
 matches = {}
 attached = true
+attachConflict = false
 rejected, err = UP.Identity.resolve(1)
 assert(rejected == nil and err == 'missing_license_identifier')

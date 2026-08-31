@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,8 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 type lockFile struct {
@@ -27,6 +26,19 @@ type check struct {
 	Name    string
 	OK      bool
 	Message string
+}
+
+type configFile struct {
+	SchemaVersion   int    `toml:"schema_version"`
+	Environment     string `toml:"environment"`
+	ServerName      string `toml:"server_name"`
+	ServerDataPath  string `toml:"server_data_path"`
+	MySQLHost       string `toml:"mysql_host"`
+	MySQLPort       int    `toml:"mysql_port"`
+	MySQLDatabase   string `toml:"mysql_database"`
+	FXServerTCPPort int    `toml:"fxserver_tcp_port"`
+	FXServerUDPPort int    `toml:"fxserver_udp_port"`
+	TxAdminPort     int    `toml:"txadmin_port"`
 }
 
 func runDoctor(args []string, stdout, stderr io.Writer) error {
@@ -66,47 +78,47 @@ func runDoctor(args []string, stdout, stderr io.Writer) error {
 }
 
 func checkConfig(path string) check {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return check{"configuration", false, err.Error()}
 	}
-	defer file.Close()
 
-	values := make(map[string]string)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			return check{"configuration", false, "invalid TOML assignment: " + line}
-		}
-		values[strings.TrimSpace(parts[0])] = strings.Trim(strings.TrimSpace(parts[1]), `"`)
-	}
-	if err := scanner.Err(); err != nil {
+	var config configFile
+	if err := toml.Unmarshal(data, &config); err != nil {
 		return check{"configuration", false, err.Error()}
 	}
 
-	required := []string{
-		"schema_version", "environment", "server_name", "server_data_path",
-		"mysql_host", "mysql_port", "mysql_database",
-		"fxserver_tcp_port", "fxserver_udp_port", "txadmin_port",
+	required := []struct {
+		name  string
+		value string
+	}{
+		{"environment", config.Environment},
+		{"server_name", config.ServerName},
+		{"server_data_path", config.ServerDataPath},
+		{"mysql_host", config.MySQLHost},
+		{"mysql_database", config.MySQLDatabase},
 	}
-	for _, key := range required {
-		if values[key] == "" {
-			return check{"configuration", false, "missing " + key}
+	for _, field := range required {
+		if field.value == "" {
+			return check{"configuration", false, "missing " + field.name}
 		}
 	}
 
-	if values["schema_version"] != "1" {
+	if config.SchemaVersion != 1 {
 		return check{"configuration", false, "unsupported schema_version"}
 	}
-	for _, key := range []string{"mysql_port", "fxserver_tcp_port", "fxserver_udp_port", "txadmin_port"} {
-		port, err := strconv.Atoi(values[key])
-		if err != nil || port < 1 || port > 65535 {
-			return check{"configuration", false, "invalid " + key}
+	ports := []struct {
+		name  string
+		value int
+	}{
+		{"mysql_port", config.MySQLPort},
+		{"fxserver_tcp_port", config.FXServerTCPPort},
+		{"fxserver_udp_port", config.FXServerUDPPort},
+		{"txadmin_port", config.TxAdminPort},
+	}
+	for _, port := range ports {
+		if port.value < 1 || port.value > 65535 {
+			return check{"configuration", false, "invalid " + port.name}
 		}
 	}
 
