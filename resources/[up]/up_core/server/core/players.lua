@@ -51,10 +51,11 @@ AddEventHandler('playerConnecting', function(_, _, deferrals)
     deferrals.done()
 end)
 
-AddEventHandler('playerJoining', function()
+AddEventHandler('playerJoining', function(oldId)
     local source = source
-    local account = UP.pendingPlayers[source]
-    UP.pendingPlayers[source] = nil
+    local pendingSource = tonumber(oldId)
+    local account = pendingSource and UP.pendingPlayers[pendingSource]
+    if pendingSource then UP.pendingPlayers[pendingSource] = nil end
     if not account then
         DropPlayer(source, 'UP connection authorization expired. Please reconnect.')
         return
