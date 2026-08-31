@@ -22,6 +22,30 @@ local function publicCharacter(character)
     }
 end
 
+function UP.Characters.constraints()
+    local config = UPConfig.character
+    return {
+        firstNameMinLength = config.firstNameMinLength,
+        firstNameMaxLength = config.firstNameMaxLength,
+        lastNameMinLength = config.lastNameMinLength,
+        lastNameMaxLength = config.lastNameMaxLength,
+        maxPerAccount = config.maxPerAccount,
+        minimumAge = config.minimumAge,
+        maximumAge = config.maximumAge
+    }
+end
+
+function UP.Characters.bootstrap(source)
+    local characters, err = UP.Characters.list(source)
+    if not characters then return nil, err end
+    local player = UP.Players.get(source)
+    return {
+        characters = characters,
+        constraints = UP.Characters.constraints(),
+        selectedPassport = player and player.passport or nil
+    }
+end
+
 function UP.Characters.list(source)
     local player = UP.Players.get(source)
     if not player then return nil, 'player_not_loaded' end

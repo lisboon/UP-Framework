@@ -1,8 +1,10 @@
-import { EntryShell } from '../features/entry/components/EntryShell'
-import { useEntryBridge } from '../features/entry/hooks/useEntryBridge'
+import { CharacterExperience } from '../features/entry/components/CharacterExperience'
+import { EntryProvider } from '../features/entry/providers/EntryProvider'
 
 export function App() {
-  const state = useEntryBridge()
-  if (state.view === 'hidden') return null
-  return <EntryShell state={state} />
+  return (
+    <EntryProvider>
+      <CharacterExperience />
+    </EntryProvider>
+  )
 }

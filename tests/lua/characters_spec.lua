@@ -74,6 +74,12 @@ local characters = assert(UP.Characters.list(1))
 assert(#characters == 1)
 assert(characters[1].updatedAt == 'updated-at')
 
+local bootstrap = assert(UP.Characters.bootstrap(1))
+assert(#bootstrap.characters == 1)
+assert(bootstrap.constraints.maxPerAccount == 3)
+assert(bootstrap.constraints.minimumAge == 18)
+assert(bootstrap.selectedPassport == nil)
+
 local created = assert(UP.Characters.create(1, {
     firstName = ' Ana ',
     lastName = 'Silva',
