@@ -13,10 +13,13 @@ tasks:
     subpath: resources
     dest: ./resources/[cfx-default]
 
-  - action: download_github
-    src: https://github.com/overextended/oxmysql
-    ref: 2efda9f2796b46093bb434faf901742d2626ce77
-    dest: ./resources/[ox]/oxmysql
+  - action: download_file
+    url: https://github.com/overextended/oxmysql/releases/download/v2.14.1/oxmysql.zip
+    path: ./tmp/oxmysql.zip
+
+  - action: unzip
+    src: ./tmp/oxmysql.zip
+    dest: ./resources/[ox]
 
   - action: download_github
     src: https://github.com/lisboon/UP-Framework

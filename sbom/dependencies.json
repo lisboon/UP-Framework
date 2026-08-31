@@ -15,8 +15,9 @@
       "role": "mysql-driver",
       "source": "https://github.com/overextended/oxmysql",
       "license": "LGPL-3.0",
+      "version": "2.14.1",
       "bundled": false,
-      "notes": "Pin an official release and checksum after legal review."
+      "notes": "Installed from the official release archive pinned by up.lock.json."
     },
     {
       "name": "ox_lib",
@@ -42,4 +43,3 @@
     "dependencies without an explicit redistribution grant"
   ]
 }
-
