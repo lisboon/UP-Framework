@@ -1,5 +1,6 @@
 UPEntryContracts = {
     version = 1,
+    uiVersion = 1,
     events = {
         clientReady = 'up:entry:client_ready:v1',
         entered = 'up:entry:entered:v1',

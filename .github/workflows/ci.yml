@@ -37,6 +37,17 @@ jobs:
           test -n "$LUA_COMPILER"
           find 'resources/[up]' -name '*.lua' -print0 | xargs -0 -n1 "$LUA_COMPILER" -p
           find tests/lua -name '*_spec.lua' -print0 | xargs -0 -n1 lua5.4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Entry web
+        working-directory: resources/[up]/up_entry/web
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          git diff --exit-code -- dist
       - name: Compose validation
         run: docker compose -f infra/compose.dev.yml config
       - name: MySQL migration integration

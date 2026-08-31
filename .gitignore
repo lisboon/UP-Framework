@@ -10,6 +10,10 @@ server.local.cfg
 bin/
 dist/
 coverage/
+node_modules/
+*.tsbuildinfo
+!resources/\[up\]/up_entry/web/dist/
+!resources/\[up\]/up_entry/web/dist/**
 
 # FiveM runtime state
 txData/

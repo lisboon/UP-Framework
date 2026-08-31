@@ -14,6 +14,16 @@ shared_scripts {
 }
 
 server_script 'server/session.lua'
-client_script 'client/session.lua'
+client_scripts {
+    'client/session.lua',
+    'client/ui.lua'
+}
+
+ui_page 'web/dist/index.html'
+
+files {
+    'web/dist/index.html',
+    'web/dist/assets/*'
+}
 
 dependency 'up_core'
