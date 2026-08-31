@@ -30,16 +30,16 @@ SET @passport = LAST_INSERT_ID();
 CALL up_test_assert(@passport >= 1000, 'passport allocation is outside the public range');
 
 INSERT INTO up_core_characters
-    (id, account_id, passport, first_name, last_name, birth_date, metadata)
+    (id, account_id, passport, first_name, last_name, birth_date, metadata, created_at, updated_at)
 VALUES
-    (@character_id, @account_id, @passport, 'Ana', 'Silva', '2000-02-29', JSON_OBJECT());
+    (@character_id, @account_id, @passport, 'Ana', 'Silva', '2000-02-29', JSON_OBJECT(), '2026-01-01', '2026-01-01');
 
 UPDATE up_core_characters
    SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP(6), version = version + 1
  WHERE id = @character_id AND status = 'active';
 CALL up_test_assert(ROW_COUNT() = 1, 'character was not soft deleted');
 CALL up_test_assert(
-    (SELECT status = 'deleted' AND deleted_at IS NOT NULL AND version = 2
+    (SELECT status = 'deleted' AND deleted_at IS NOT NULL AND updated_at > created_at AND version = 2
        FROM up_core_characters WHERE id = @character_id),
     'soft delete state is invalid'
 );
