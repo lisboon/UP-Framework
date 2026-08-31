@@ -40,8 +40,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: resources/[up]/up_entry/web/package-lock.json
       - name: Entry web
         working-directory: resources/[up]/up_entry/web
         run: |
