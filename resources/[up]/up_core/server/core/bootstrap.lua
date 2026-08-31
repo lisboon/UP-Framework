@@ -1,9 +1,11 @@
 UP = rawget(_G, 'UP') or {}
 
 UP.players = UP.players or {}
+UP.accountSources = UP.accountSources or {}
 UP.callbacks = UP.callbacks or {}
 UP.rateLimits = UP.rateLimits or {}
 UP.characterMutations = UP.characterMutations or {}
+UP.playerMutations = UP.playerMutations or {}
 UP.pendingPlayers = UP.pendingPlayers or {}
 UP.ready = false
 
@@ -50,7 +52,9 @@ AddEventHandler('onResourceStop', function(resourceName)
 
     UP.ready = false
     UP.players = {}
+    UP.accountSources = {}
     UP.rateLimits = {}
     UP.characterMutations = {}
+    UP.playerMutations = {}
     UP.pendingPlayers = {}
 end)

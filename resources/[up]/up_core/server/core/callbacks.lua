@@ -82,6 +82,7 @@ end)
 UP.Callbacks.register('core.get_state', function(_, _, player)
     return {
         loaded = player.loaded,
-        passport = player.passport
+        passport = player.passport,
+        phase = player.phase
     }
 end)

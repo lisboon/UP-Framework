@@ -5,8 +5,12 @@ local function unload(source, reason)
     if not player then return end
 
     TriggerEvent(UPContracts.events.playerUnloaded, source, player, reason)
+    if UP.accountSources[player.accountId] == source then
+        UP.accountSources[player.accountId] = nil
+    end
     UP.players[source] = nil
     UP.rateLimits[source] = nil
+    UP.playerMutations[source] = nil
 end
 
 local function expireAuthorization(source, account)
@@ -60,16 +64,22 @@ AddEventHandler('playerJoining', function(oldId)
         DropPlayer(source, 'UP connection authorization expired. Please reconnect.')
         return
     end
+    if UP.accountSources[account.id] then
+        DropPlayer(source, 'This UP account is already connected.')
+        return
+    end
 
     local state = {
         source = source,
         accountId = account.id,
         characterId = nil,
         passport = nil,
-        loaded = true
+        loaded = true,
+        phase = 'account_ready'
     }
 
     UP.players[source] = state
+    UP.accountSources[account.id] = source
     TriggerEvent(UPContracts.events.playerLoaded, source, state)
 end)
 
@@ -82,30 +92,16 @@ function UP.Players.get(source)
     return UP.players[tonumber(source)]
 end
 
-function UP.Players.activateCharacter(source, passport)
-    if not UP.Validation.passport(passport) then
-        return false, 'invalid_passport'
-    end
-
+function UP.Players.activateCharacter(source, character)
     local player = UP.players[source]
     if not player then return false, 'player_not_loaded' end
     if player.characterId then return false, 'character_already_active' end
 
-    local character = MySQL.single.await([[
-        SELECT id, passport, status
-          FROM up_core_characters
-         WHERE account_id = ? AND passport = ?
-         LIMIT 1
-    ]], { player.accountId, passport })
-
-    if not character or character.status ~= 'active' then
-        return false, 'character_not_available'
-    end
-
     player.characterId = character.id
     player.passport = tonumber(character.passport)
+    player.phase = 'character_selected'
     TriggerEvent(UPContracts.events.characterActivated, source, player)
-    TriggerClientEvent(UPContracts.events.characterReady, source, {
+    TriggerClientEvent(UPContracts.events.characterSelected, source, {
         passport = player.passport
     })
     return true, player

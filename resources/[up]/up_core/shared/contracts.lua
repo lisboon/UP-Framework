@@ -12,6 +12,7 @@
 ---@field characterId string?
 ---@field passport integer?
 ---@field loaded boolean
+---@field phase 'account_ready'|'character_selected'|'spawned'
 
 ---@class UPCallbackEnvelope
 ---@field version integer
@@ -27,6 +28,7 @@ UPContracts = {
         characterCreated = 'up:character:created:v1',
         characterDeleted = 'up:character:deleted:v1',
         characterActivated = 'up:character:activated:v1',
+        characterSelected = 'up:character:selected:v1',
         characterReady = 'up:character:ready:v1',
         callbackRequest = 'up:callback:request:v1',
         callbackResponse = 'up:callback:response:v1'
