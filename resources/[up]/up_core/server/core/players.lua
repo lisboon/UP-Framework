@@ -1,61 +1,5 @@
 UP.Players = {}
 
-local function syncIdentifiers(accountId, identifiers)
-    for _, identifier in ipairs(identifiers) do
-        MySQL.prepare.await([[
-            INSERT INTO up_core_account_identifiers (account_id, provider, identifier)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE account_id = VALUES(account_id), last_seen_at = CURRENT_TIMESTAMP
-        ]], { accountId, identifier.kind, identifier.value })
-    end
-end
-
-local function resolveAccount(source)
-    local primary = UP.Identifiers.primary(source)
-    if not primary then return nil, 'missing_license_identifier' end
-
-    local identifiers = UP.Identifiers.collect(source)
-    local account = MySQL.single.await([[
-        SELECT a.id, a.status
-          FROM up_core_accounts a
-          JOIN up_core_account_identifiers ai ON ai.account_id = a.id
-         WHERE ai.provider = ? AND ai.identifier = ?
-         LIMIT 1
-    ]], { primary.kind, primary.value })
-
-    if not account then
-        local accountId = MySQL.scalar.await('SELECT UUID()')
-        local created = MySQL.transaction.await({
-            {
-                query = 'INSERT INTO up_core_accounts (id, status) VALUES (?, ?)',
-                values = { accountId, 'active' }
-            },
-            {
-                query = [[
-                    INSERT INTO up_core_account_identifiers (account_id, provider, identifier)
-                    VALUES (?, ?, ?)
-                ]],
-                values = { accountId, primary.kind, primary.value }
-            }
-        })
-        if created then
-            account = { id = accountId, status = 'active' }
-        else
-            account = MySQL.single.await([[
-                SELECT a.id, a.status
-                  FROM up_core_accounts a
-                  JOIN up_core_account_identifiers ai ON ai.account_id = a.id
-                 WHERE ai.provider = ? AND ai.identifier = ?
-                 LIMIT 1
-            ]], { primary.kind, primary.value })
-            if not account then return nil, 'account_create_failed' end
-        end
-    end
-
-    syncIdentifiers(account.id, identifiers)
-    return account
-end
-
 local function unload(source, reason)
     local player = UP.players[source]
     if not player then return end
@@ -65,21 +9,54 @@ local function unload(source, reason)
     UP.rateLimits[source] = nil
 end
 
-AddEventHandler('playerJoining', function()
+local function expireAuthorization(source, account)
+    SetTimeout(30000, function()
+        if UP.pendingPlayers[source] == account then
+            UP.pendingPlayers[source] = nil
+        end
+    end)
+end
+
+AddEventHandler('playerConnecting', function(_, _, deferrals)
     local source = source
+    deferrals.defer()
+    Wait(0)
+
     if not UP.ready then
-        DropPlayer(source, 'UP is still starting. Please reconnect in a moment.')
+        deferrals.done('UP is still starting. Please reconnect in a moment.')
         return
     end
 
-    local account, err = resolveAccount(source)
+    deferrals.update('UP is validating your identity.')
+    local resolved, account, err = pcall(UP.Identity.resolve, source)
+    Wait(0)
+
+    if not resolved then
+        deferrals.done('UP could not validate your identity. Please try again.')
+        return
+    end
     if not account then
-        DropPlayer(source, ('Unable to resolve account: %s'):format(err))
+        print(('^1[up_core]^7 identity rejected for source %s (%s)'):format(source, err))
+        deferrals.done('UP could not validate your identity. Please contact support.')
         return
     end
 
     if account.status ~= 'active' then
-        DropPlayer(source, 'This account is not active.')
+        deferrals.done('This UP account is not active.')
+        return
+    end
+
+    UP.pendingPlayers[source] = account
+    expireAuthorization(source, account)
+    deferrals.done()
+end)
+
+AddEventHandler('playerJoining', function()
+    local source = source
+    local account = UP.pendingPlayers[source]
+    UP.pendingPlayers[source] = nil
+    if not account then
+        DropPlayer(source, 'UP connection authorization expired. Please reconnect.')
         return
     end
 
@@ -96,6 +73,7 @@ AddEventHandler('playerJoining', function()
 end)
 
 AddEventHandler('playerDropped', function(reason)
+    UP.pendingPlayers[source] = nil
     unload(source, reason or 'player_dropped')
 end)
 
