@@ -33,6 +33,7 @@ UPContracts = {
         characterSelected = 'up:character:selected:v1',
         characterReady = 'up:character:ready:v1',
         spawnAuthorized = 'up:spawn:authorized:v1',
+        spawnFailed = 'up:spawn:failed:v1',
         spawnCompleted = 'up:spawn:completed:v1',
         playerSpawned = 'up:player:spawned:v1',
         callbackRequest = 'up:callback:request:v1',

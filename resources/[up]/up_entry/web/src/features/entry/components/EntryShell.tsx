@@ -6,7 +6,8 @@ interface EntryShellProps {
 }
 
 export function EntryShell({ state, onRetry }: EntryShellProps) {
-  const selected = state.view === 'selected'
+  const selected = state.view === 'arrivalLoading' || state.view === 'spawning'
+  const spawning = state.view === 'spawning'
   const failed = state.view === 'error'
 
   return (
@@ -24,11 +25,11 @@ export function EntryShell({ state, onRetry }: EntryShellProps) {
       <section className="entry-copy">
         <p className="eyebrow"><span>01</span> {selected ? 'Identidade confirmada' : 'Travessia em curso'}</p>
         <h1>{selected ? <>Seu universo<br />aguarda.</> : <>Entre dois<br />mundos.</>}</h1>
-        <p className="supporting-copy">Sua identidade está sendo sincronizada com este universo.</p>
+        <p className="supporting-copy">{spawning ? 'Sua chegada foi autorizada. Preparando o mundo ao seu redor.' : 'Sua identidade está sendo sincronizada com este universo.'}</p>
 
         <div className="status-line">
           <span className="status-pulse" aria-hidden="true" />
-          <span>{failed ? state.error ?? 'Não foi possível concluir a travessia' : selected ? 'Preparando locais de chegada' : 'Preparando suas identidades'}</span>
+          <span>{failed ? state.error ?? 'Não foi possível concluir a travessia' : spawning ? 'Materializando personagem' : selected ? 'Preparando locais de chegada' : 'Preparando suas identidades'}</span>
         </div>
         {failed && onRetry && <button className="text-action shell-retry" type="button" onClick={onRetry}>Tentar novamente</button>}
       </section>

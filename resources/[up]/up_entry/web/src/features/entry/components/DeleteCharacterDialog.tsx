@@ -1,5 +1,5 @@
 import type { Character } from '../model/entryReducer'
-import { useEntry } from '../providers/EntryProvider'
+import { useEntry } from '../providers/entryContext'
 import { DialogFrame } from './DialogFrame'
 
 interface DeleteCharacterDialogProps { character: Character }

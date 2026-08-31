@@ -1,22 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { UI_PROTOCOL_VERSION } from '../model/entryContract'
 import { useEntryBridge } from '../hooks/useEntryBridge'
 import { initialEntryState, reduceEntry } from '../model/entryReducer'
-import type { Character, CharacterDraft, EntryState } from '../model/entryReducer'
 import { characterService } from '../services/characterService'
-
-interface EntryContextValue {
-  state: EntryState
-  openCreate: () => void
-  openDelete: (character: Character) => void
-  closeDialog: () => void
-  createCharacter: (draft: CharacterDraft) => Promise<void>
-  deleteCharacter: (passport: number) => Promise<void>
-  selectCharacter: (passport: number) => Promise<void>
-  retry: () => void
-}
-
-const EntryContext = createContext<EntryContextValue | null>(null)
+import { spawnService } from '../services/spawnService'
+import { EntryContext } from './entryContext'
+import type { EntryContextValue } from './entryContext'
 
 const errorMessages: Record<string, string> = {
   timeout: 'O servidor demorou para responder. Tente novamente.',
@@ -26,6 +15,8 @@ const errorMessages: Record<string, string> = {
   character_not_available: 'Este personagem não está mais disponível.',
   character_busy: 'Este personagem já está sendo alterado.',
   player_busy: 'Outra operação ainda está em andamento.',
+  spawn_not_available: 'A chegada ainda não está disponível para este personagem.',
+  spawn_location_invalid: 'Este local de chegada não está mais disponível.',
   entry_not_open: 'A sessão de entrada não está disponível.',
   core_unavailable: 'O núcleo do servidor está reiniciando. Tente novamente.'
 }
@@ -46,6 +37,19 @@ export function EntryProvider({ children }: React.PropsWithChildren) {
     void characterService.load()
       .then(({ characters, constraints, selectedPassport }) => {
         if (current) dispatch({ type: 'characters/loaded', characters, constraints, selectedPassport })
+      })
+      .catch((error) => {
+        if (current) dispatch({ type: 'request/failed', error: messageFor(error) })
+      })
+    return () => { current = false }
+  }, [state.view])
+
+  useEffect(() => {
+    if (state.view !== 'arrivalLoading') return
+    let current = true
+    void spawnService.load()
+      .then((locations) => {
+        if (current) dispatch({ type: 'locations/loaded', locations })
       })
       .catch((error) => {
         if (current) dispatch({ type: 'request/failed', error: messageFor(error) })
@@ -97,14 +101,23 @@ export function EntryProvider({ children }: React.PropsWithChildren) {
         mutationLocked.current = false
       }
     },
+    previewCharacter: (passport) => { void characterService.preview(passport).catch(() => undefined) },
+    previewLocation: (locationId) => { void spawnService.preview(locationId).catch(() => undefined) },
+    selectLocation: async (locationId) => {
+      if (mutationLocked.current) return
+      mutationLocked.current = true
+      dispatch({ type: 'spawn/started' })
+      try {
+        await spawnService.select(locationId)
+        dispatch({ type: 'spawn/requested' })
+      } catch (error) {
+        dispatch({ type: 'request/failed', error: messageFor(error) })
+      } finally {
+        mutationLocked.current = false
+      }
+    },
     retry: () => dispatch({ version: UI_PROTOCOL_VERSION, action: 'entry/open' })
   }), [state])
 
   return <EntryContext value={value}>{children}</EntryContext>
-}
-
-export function useEntry() {
-  const context = useContext(EntryContext)
-  if (!context) throw new Error('useEntry must be used within EntryProvider')
-  return context
 }

@@ -26,14 +26,20 @@ export interface CharacterDraft {
   birthDate: string
 }
 
-export type EntryView = 'hidden' | 'loading' | 'ready' | 'selected' | 'error'
+export interface SpawnLocation {
+  id: string
+  label: string
+}
+
+export type EntryView = 'hidden' | 'loading' | 'ready' | 'arrivalLoading' | 'arrival' | 'spawning' | 'error'
 export type EntryDialog = { type: 'create' } | { type: 'delete'; character: Character } | null
-export type EntryMutation = 'creating' | 'deleting' | 'selecting' | null
+export type EntryMutation = 'creating' | 'deleting' | 'selecting' | 'spawning' | null
 
 export interface EntryState {
   view: EntryView
   characters: Character[]
   constraints?: CharacterConstraints
+  locations: SpawnLocation[]
   dialog: EntryDialog
   mutation: EntryMutation
   error?: string
@@ -44,6 +50,9 @@ export type EntryStateAction = EntryMessage
   | { type: 'characters/created'; character: Character }
   | { type: 'characters/deleted'; passport: number }
   | { type: 'characters/selected' }
+  | { type: 'locations/loaded'; locations: SpawnLocation[] }
+  | { type: 'spawn/started' }
+  | { type: 'spawn/requested' }
   | { type: 'request/started'; mutation: Exclude<EntryMutation, null> }
   | { type: 'request/failed'; error: string }
   | { type: 'dialog/create' }
@@ -53,6 +62,7 @@ export type EntryStateAction = EntryMessage
 export const initialEntryState: EntryState = {
   view: 'hidden',
   characters: [],
+  locations: [],
   dialog: null,
   mutation: null
 }
@@ -61,12 +71,13 @@ export function reduceEntry(state: EntryState, action: EntryStateAction): EntryS
   if ('action' in action) {
     if (action.action === 'entry/open') return { ...initialEntryState, view: 'loading' }
     if (action.action === 'entry/close') return initialEntryState
+    if (action.action === 'spawn/failed') return { ...state, view: 'arrival', mutation: null, error: 'A chegada expirou antes de ser concluída. Escolha o local novamente.' }
     return { ...state, view: 'error', mutation: null, error: action.payload?.message }
   }
 
   switch (action.type) {
     case 'characters/loaded':
-      return { ...state, view: action.selectedPassport ? 'selected' : 'ready', characters: action.characters, constraints: action.constraints, mutation: null, error: undefined }
+      return { ...state, view: action.selectedPassport ? 'arrivalLoading' : 'ready', characters: action.characters, constraints: action.constraints, mutation: null, error: undefined }
     case 'characters/created':
       if (state.view !== 'ready') return state
       return { ...state, characters: [...state.characters, action.character], dialog: null, mutation: null, error: undefined }
@@ -75,12 +86,21 @@ export function reduceEntry(state: EntryState, action: EntryStateAction): EntryS
       return { ...state, characters: state.characters.filter(({ passport }) => passport !== action.passport), dialog: null, mutation: null, error: undefined }
     case 'characters/selected':
       if (state.view !== 'ready') return state
-      return { ...state, view: 'selected', dialog: null, mutation: null, error: undefined }
+      return { ...state, view: 'arrivalLoading', dialog: null, mutation: null, error: undefined }
+    case 'locations/loaded':
+      if (state.view !== 'arrivalLoading') return state
+      return { ...state, view: 'arrival', locations: action.locations, mutation: null, error: undefined }
+    case 'spawn/started':
+      if (state.view !== 'arrival' || state.mutation) return state
+      return { ...state, mutation: 'spawning', error: undefined }
+    case 'spawn/requested':
+      if (state.view !== 'arrival') return state
+      return { ...state, view: 'spawning', mutation: null, error: undefined }
     case 'request/started':
       if (state.view !== 'ready' || state.mutation) return state
       return { ...state, mutation: action.mutation, error: undefined }
     case 'request/failed':
-      return { ...state, view: state.view === 'loading' ? 'error' : state.view, mutation: null, error: action.error }
+      return { ...state, view: state.view === 'loading' || state.view === 'arrivalLoading' ? 'error' : state.view, mutation: null, error: action.error }
     case 'dialog/create':
       return { ...state, dialog: { type: 'create' }, error: undefined }
     case 'dialog/delete':

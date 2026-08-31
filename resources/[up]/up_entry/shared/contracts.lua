@@ -9,6 +9,7 @@ UPEntryContracts = {
     coreEvents = {
         playerLoaded = 'up:player:loaded:v1',
         playerUnloaded = 'up:player:unloaded:v1',
-        playerSpawned = 'up:player:spawned:v1'
+        playerSpawned = 'up:player:spawned:v1',
+        spawnFailed = 'up:spawn:failed:v1'
     }
 }
