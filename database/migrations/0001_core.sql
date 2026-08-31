@@ -1,6 +1,3 @@
--- UP core schema v1. MySQL 8.0+.
--- Forward-only migration; release rollback restores the pre-migration backup.
-
 CREATE TABLE IF NOT EXISTS up_core_schema_migrations (
     version INT UNSIGNED NOT NULL,
     name VARCHAR(128) NOT NULL,
@@ -120,7 +117,6 @@ VALUES
     ('admin', 'up.admin')
 ON DUPLICATE KEY UPDATE permission = VALUES(permission);
 
--- The CLI replaces the placeholder checksum atomically when applying this migration.
 INSERT INTO up_core_schema_migrations (version, name, checksum)
 VALUES (1, 'core', REPEAT('0', 64))
 ON DUPLICATE KEY UPDATE name = VALUES(name);

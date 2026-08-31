@@ -1,8 +1,6 @@
 UP.Callbacks = {}
 
 local function consumeRateLimit(source, name)
-    -- GetGameTimer is monotonic. os.clock measures CPU time and would let limits
-    -- refill unpredictably while the server is idle.
     local now = GetGameTimer() / 1000.0
     local config = UPConfig.callbackRateLimit
     local playerLimits = UP.rateLimits[source] or {}

@@ -28,7 +28,7 @@ jobs:
           sudo apt-get install -y lua5.4
           LUA_COMPILER="$(command -v luac5.4 || command -v luac)"
           test -n "$LUA_COMPILER"
-          find 'resources/[system]/up_core' -name '*.lua' -print0 | xargs -0 -n1 "$LUA_COMPILER" -p
+          find 'resources/[up]/up_core' -name '*.lua' -print0 | xargs -0 -n1 "$LUA_COMPILER" -p
       - name: Compose validation
         run: docker compose -f infra/compose.dev.yml config
       - name: MySQL migration integration
