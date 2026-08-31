@@ -1,0 +1,10 @@
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+
+sv_maxclients 8
+sv_licenseKey "replace-me"
+sv_hostname "UP Development"
+set mysql_connection_string "mysql://up:up-local-only@127.0.0.1:3307/up"
+add_principal identifier.fivem:replace-me group.admin
+
+exec common.cfg

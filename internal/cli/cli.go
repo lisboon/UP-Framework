@@ -69,8 +69,6 @@ func runInit(args []string, stdout, stderr io.Writer) error {
 		{"up.lock.json", defaultLock},
 	}
 
-	// Validate the whole operation before writing so init cannot leave a
-	// half-created installation when one target already exists.
 	for _, file := range files {
 		target := filepath.Join(abs, file.name)
 		if _, err := os.Stat(target); err == nil {

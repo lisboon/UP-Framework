@@ -14,7 +14,7 @@ func TestPermanentUPNamingContract(t *testing.T) {
 		"up.toml",
 		"up.lock.json",
 		filepath.Join("cmd", "upctl", "main.go"),
-		filepath.Join("resources", "[system]", "up_core", "fxmanifest.lua"),
+		filepath.Join("resources", "[up]", "up_core", "fxmanifest.lua"),
 	}
 	for _, relative := range required {
 		if _, err := os.Stat(filepath.Join(root, relative)); err != nil {

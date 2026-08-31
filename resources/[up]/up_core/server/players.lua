@@ -41,8 +41,6 @@ local function resolveAccount(source)
         if created then
             account = { id = accountId, status = 'active' }
         else
-            -- A concurrent connection may have inserted the unique identifier.
-            -- Resolve it again instead of keeping an account that was rolled back.
             account = MySQL.single.await([[
                 SELECT a.id, a.status
                   FROM up_core_accounts a

@@ -1,0 +1,48 @@
+$engine: 3
+$onesync: on
+
+name: UP - Universo Paralelo
+version: 0.1.0-dev
+author: lisboon
+description: Clean-room UP development foundation
+
+tasks:
+  - action: download_github
+    src: https://github.com/citizenfx/cfx-server-data
+    ref: 32d98e7524b952faf8b220d719615b0346b0a6cc
+    subpath: resources
+    dest: ./resources/[cfx-default]
+
+  - action: download_github
+    src: https://github.com/overextended/oxmysql
+    ref: 2efda9f2796b46093bb434faf901742d2626ce77
+    dest: ./resources/[ox]/oxmysql
+
+  - action: download_github
+    src: https://github.com/lisboon/product
+    ref: feat/up-foundation
+    dest: ./tmp/up
+
+  - action: move_path
+    src: ./tmp/up/server.cfg
+    dest: ./server.cfg
+
+  - action: move_path
+    src: ./tmp/up/permissions.cfg
+    dest: ./permissions.cfg
+
+  - action: move_path
+    src: ./tmp/up/common.cfg
+    dest: ./common.cfg
+
+  - action: move_path
+    src: ./tmp/up/resources/[up]
+    dest: ./resources/[up]
+
+  - action: connect_database
+
+  - action: query_database
+    file: ./tmp/up/database/migrations/0001_core.sql
+
+  - action: remove_path
+    path: ./tmp/up

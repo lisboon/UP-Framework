@@ -8,7 +8,7 @@ Foundation / walking skeleton. Not ready for production or sale.
 
 ## Components
 
-- `resources/[system]/up_core`: open FiveM core written in CfxLua.
+- `resources/[up]/up_core`: open FiveM core written in CfxLua.
 - `database/migrations`: forward-compatible MySQL 8 migrations.
 - `cmd/upctl`: cross-platform release and diagnostics CLI written in Go.
 - `infra`: reproducible Linux/MySQL reference environment.
@@ -24,6 +24,22 @@ go run ./cmd/upctl version
 go run ./cmd/upctl doctor --path .
 docker compose -f infra/compose.dev.yml config
 ```
+
+## Runtime deployment
+
+For an actual FiveM deployment, launch a current FXServer artifact and deploy `recipe.yaml` through txAdmin. FXServer artifacts are runtime binaries and stay outside Git.
+
+For manual Windows development, copy `server.local.cfg.example` to `server.local.cfg`, replace the license key, extract FXServer into the ignored `artifacts/` directory, and run:
+
+```powershell
+.\artifacts\FXServer.exe +exec server.local.cfg
+```
+
+`server.cfg` is rendered by txAdmin, while `common.cfg` contains configuration shared by both installation modes. Never commit resolved secrets. Before a public release, the recipe must reference an immutable UP tag or commit.
+
+## Naming contract
+
+The product is **UP — Universo Paralelo**. First-party resources live under `resources/[up]`, use names such as `up_core`, publish versioned events in the form `up:<domain>:<action>:vN`, store data in `up_<domain>_*` tables, and expose operator tooling through `upctl`.
 
 Start the disposable development database with:
 

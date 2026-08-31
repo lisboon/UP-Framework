@@ -1,12 +1,28 @@
+# Environment and local configuration
 .env
+server.local.cfg
+
+# Editors
 .idea/
 .vscode/
+
+# Build and test output
 bin/
 dist/
 coverage/
+
+# FiveM runtime state
 txData/
+/artifacts/
 mysql-data/
+
+# Local documentation
+/docs/
+
+# Logs and backups
 *.log
 *.bak
+
+# Local binaries
 upctl.exe
 upctl-legacy.exe
