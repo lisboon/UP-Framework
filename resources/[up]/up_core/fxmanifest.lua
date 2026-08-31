@@ -21,7 +21,9 @@ server_scripts {
     'server/permissions.lua',
     'server/players.lua',
     'server/callbacks.lua',
+    'server/character_repository.lua',
     'server/characters.lua',
+    'server/character_callbacks.lua',
     'server/exports.lua'
 }
 
