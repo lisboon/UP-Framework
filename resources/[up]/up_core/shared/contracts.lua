@@ -12,7 +12,9 @@
 ---@field characterId string?
 ---@field passport integer?
 ---@field loaded boolean
----@field phase 'account_ready'|'character_selected'|'spawned'
+---@field phase 'account_ready'|'character_selected'|'spawning'|'spawned'
+---@field spawnAttemptId string?
+---@field spawnLocationId string?
 
 ---@class UPCallbackEnvelope
 ---@field version integer
@@ -30,6 +32,9 @@ UPContracts = {
         characterActivated = 'up:character:activated:v1',
         characterSelected = 'up:character:selected:v1',
         characterReady = 'up:character:ready:v1',
+        spawnAuthorized = 'up:spawn:authorized:v1',
+        spawnCompleted = 'up:spawn:completed:v1',
+        playerSpawned = 'up:player:spawned:v1',
         callbackRequest = 'up:callback:request:v1',
         callbackResponse = 'up:callback:response:v1'
     }

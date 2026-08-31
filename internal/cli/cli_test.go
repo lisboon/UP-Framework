@@ -90,3 +90,24 @@ func TestDoctorRejectsMalformedConfig(t *testing.T) {
 		t.Fatalf("missing failed configuration check in %q", stdout.String())
 	}
 }
+
+func TestConfigParserSupportsTOMLStringsAndSections(t *testing.T) {
+	dir := t.TempDir()
+	config := defaultConfig + `
+description = "UP # Universo Paralelo"
+
+[metadata]
+tags = ["roleplay", "brasil"]
+notes = """linha um
+linha dois"""
+`
+	path := filepath.Join(dir, "up.toml")
+	if err := os.WriteFile(path, []byte(config), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	result := checkConfig(path)
+	if !result.OK {
+		t.Fatalf("valid TOML rejected: %s", result.Message)
+	}
+}

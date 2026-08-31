@@ -82,10 +82,10 @@ function UP.Characters.delete(source, passport)
     end
     UP.characterMutations[character.id] = true
 
-    local deleted = UP.CharacterRepository.softDelete(player.accountId, character)
+    local executed, deleted = pcall(UP.CharacterRepository.softDelete, player.accountId, character)
     UP.characterMutations[character.id] = nil
     unlockPlayer(source)
-    if not deleted then return nil, 'character_delete_failed' end
+    if not executed or not deleted then return nil, 'character_delete_failed' end
 
     TriggerEvent(UPContracts.events.characterDeleted, source, passport)
     return true
@@ -108,7 +108,15 @@ function UP.Characters.select(source, passport)
         unlockPlayer(source)
         return nil, 'character_not_available'
     end
-    if not UP.CharacterRepository.select(player.accountId, character) then
+    if UP.characterMutations[character.id] then
+        unlockPlayer(source)
+        return nil, 'character_busy'
+    end
+    UP.characterMutations[character.id] = true
+
+    local executed, selected = pcall(UP.CharacterRepository.select, player.accountId, character)
+    UP.characterMutations[character.id] = nil
+    if not executed or not selected then
         unlockPlayer(source)
         return nil, 'character_select_failed'
     end

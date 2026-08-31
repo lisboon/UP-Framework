@@ -21,7 +21,11 @@ BEGIN
     COMMIT;
 END//
 
-CREATE PROCEDURE up_character_tx_stale_delete(IN p_account_id CHAR(36), IN p_character_id CHAR(36))
+CREATE PROCEDURE up_character_tx_stale_delete(
+    IN p_account_id CHAR(36),
+    IN p_character_id CHAR(36),
+    IN p_expected_version INT UNSIGNED
+)
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION ROLLBACK;
     START TRANSACTION;
@@ -29,7 +33,8 @@ BEGIN
     VALUES (
         IF(EXISTS(
             SELECT 1 FROM up_core_characters
-             WHERE id = p_character_id AND account_id = p_account_id AND status = 'active'
+             WHERE id = p_character_id AND account_id = p_account_id
+               AND status = 'active' AND version = p_expected_version
         ), p_account_id, NULL),
         0
     )
@@ -72,10 +77,20 @@ CALL up_character_tx_assert(
 
 UPDATE up_core_characters
    SET last_selected_at = CURRENT_TIMESTAMP(6), version = version + 1
- WHERE id = @character_id AND account_id = @account_id AND status = 'active';
+ WHERE id = @character_id AND account_id = @account_id AND status = 'active' AND version = 1;
 CALL up_character_tx_assert(
     (SELECT last_selected_at IS NOT NULL AND version = 2 FROM up_core_characters WHERE id = @character_id),
     'selection state was not persisted'
+);
+
+CALL up_character_tx_stale_delete(@account_id, @character_id, 1);
+CALL up_character_tx_assert(
+    (SELECT used = 1 FROM up_core_character_slots WHERE account_id = @account_id),
+    'stale version released a character slot'
+);
+CALL up_character_tx_assert(
+    (SELECT status = 'active' AND version = 2 FROM up_core_characters WHERE id = @character_id),
+    'stale version changed character state'
 );
 
 START TRANSACTION;
@@ -83,14 +98,15 @@ INSERT INTO up_core_character_slots (account_id, used)
 VALUES (
     IF(EXISTS(
         SELECT 1 FROM up_core_characters
-         WHERE id = @character_id AND account_id = @account_id AND status = 'active'
+         WHERE id = @character_id AND account_id = @account_id
+           AND status = 'active' AND version = 2
     ), @account_id, NULL),
     0
 )
 ON DUPLICATE KEY UPDATE used = used;
 UPDATE up_core_characters
    SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP(6), version = version + 1
- WHERE id = @character_id AND account_id = @account_id AND status = 'active';
+ WHERE id = @character_id AND account_id = @account_id AND status = 'active' AND version = 2;
 UPDATE up_core_character_slots SET used = GREATEST(used - 1, 0) WHERE account_id = @account_id;
 COMMIT;
 
@@ -115,7 +131,7 @@ CALL up_character_tx_assert(
     'failed create leaked a passport allocation'
 );
 
-CALL up_character_tx_stale_delete(@account_id, @character_id);
+CALL up_character_tx_stale_delete(@account_id, @character_id, 2);
 CALL up_character_tx_assert(
     (SELECT used = 3 FROM up_core_character_slots WHERE account_id = @account_id),
     'stale delete released a slot'

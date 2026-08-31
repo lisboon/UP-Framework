@@ -6,6 +6,9 @@ UPConfig = {
         capacity = 12,
         refillPerSecond = 4
     },
+    connection = {
+        authorizationTtlSeconds = 30
+    },
     character = {
         firstNameMinLength = 2,
         firstNameMaxLength = 32,
@@ -14,5 +17,20 @@ UPConfig = {
         maxPerAccount = 3,
         minimumAge = 18,
         maximumAge = 90
+    },
+    spawn = {
+        attemptTimeoutMs = 15000,
+        locations = {
+            {
+                id = 'airport',
+                label = 'Aeroporto Internacional de Los Santos',
+                coordinates = {
+                    x = -1037.72,
+                    y = -2737.87,
+                    z = 20.17,
+                    heading = 329.0
+                }
+            }
+        }
     }
 }

@@ -8,7 +8,8 @@ function UP.CharacterRepository.listActive(accountId)
                DATE_FORMAT(birth_date, '%Y-%m-%d') AS birthDate,
                created_at AS createdAt,
                updated_at AS updatedAt,
-               last_selected_at AS lastSelectedAt
+               last_selected_at AS lastSelectedAt,
+               version
           FROM up_core_characters
          WHERE account_id = ? AND status = 'active'
          ORDER BY passport ASC
@@ -24,7 +25,8 @@ function UP.CharacterRepository.findActive(accountId, passport)
                DATE_FORMAT(birth_date, '%Y-%m-%d') AS birthDate,
                created_at AS createdAt,
                updated_at AS updatedAt,
-               last_selected_at AS lastSelectedAt
+               last_selected_at AS lastSelectedAt,
+               version
           FROM up_core_characters
          WHERE account_id = ? AND passport = ? AND status = 'active'
          LIMIT 1
@@ -109,21 +111,21 @@ function UP.CharacterRepository.softDelete(accountId, character)
                 VALUES (
                     IF(EXISTS(
                         SELECT 1 FROM up_core_characters
-                         WHERE id = ? AND account_id = ? AND status = 'active'
+                         WHERE id = ? AND account_id = ? AND status = 'active' AND version = ?
                     ), ?, NULL),
                     0
                 )
                 ON DUPLICATE KEY UPDATE used = used
             ]],
-            values = { character.id, accountId, accountId }
+            values = { character.id, accountId, character.version, accountId }
         },
         {
             query = [[
                 UPDATE up_core_characters
                    SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP(6), version = version + 1
-                 WHERE id = ? AND account_id = ? AND status = 'active'
+                 WHERE id = ? AND account_id = ? AND status = 'active' AND version = ?
             ]],
-            values = { character.id, accountId }
+            values = { character.id, accountId, character.version }
         },
         {
             query = 'UPDATE up_core_character_slots SET used = GREATEST(used - 1, 0) WHERE account_id = ?',
@@ -149,21 +151,21 @@ function UP.CharacterRepository.select(accountId, character)
                 VALUES (
                     IF(EXISTS(
                         SELECT 1 FROM up_core_characters
-                         WHERE id = ? AND account_id = ? AND status = 'active'
+                         WHERE id = ? AND account_id = ? AND status = 'active' AND version = ?
                     ), ?, NULL),
                     0
                 )
                 ON DUPLICATE KEY UPDATE used = used
             ]],
-            values = { character.id, accountId, accountId }
+            values = { character.id, accountId, character.version, accountId }
         },
         {
             query = [[
                 UPDATE up_core_characters
                    SET last_selected_at = CURRENT_TIMESTAMP(6), version = version + 1
-                 WHERE id = ? AND account_id = ? AND status = 'active'
+                 WHERE id = ? AND account_id = ? AND status = 'active' AND version = ?
             ]],
-            values = { character.id, accountId }
+            values = { character.id, accountId, character.version }
         },
         {
             query = [[

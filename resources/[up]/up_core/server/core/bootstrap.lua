@@ -6,6 +6,8 @@ UP.callbacks = UP.callbacks or {}
 UP.rateLimits = UP.rateLimits or {}
 UP.characterMutations = UP.characterMutations or {}
 UP.playerMutations = UP.playerMutations or {}
+UP.spawnSequence = UP.spawnSequence or 0
+UP.authorizationSequence = UP.authorizationSequence or 0
 UP.pendingPlayers = UP.pendingPlayers or {}
 UP.ready = false
 
@@ -56,5 +58,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     UP.rateLimits = {}
     UP.characterMutations = {}
     UP.playerMutations = {}
+    UP.spawnSequence = 0
+    UP.authorizationSequence = 0
     UP.pendingPlayers = {}
 end)
