@@ -19,6 +19,7 @@ UPContracts = {
         characterSelected = 'up:characterSelected',
         characterReady = 'up:characterReady',
         spawnAuthorized = 'up:spawnAuthorized',
+        spawnFailed = 'up:spawnFailed',
         playerSpawned = 'up:playerSpawned'
     }
 }
@@ -34,6 +35,7 @@ local selected
 local authorized
 local ready
 local spawned
+local spawnFailed
 
 function AddEventHandler(name, handler)
     handlers[name] = handler
@@ -53,6 +55,9 @@ function TriggerClientEvent(name, playerSource, payload)
     end
     if name == UPContracts.events.characterReady then
         ready = { playerSource, payload }
+    end
+    if name == UPContracts.events.spawnFailed then
+        spawnFailed = { playerSource, payload }
     end
 end
 function Wait() end
@@ -123,6 +128,7 @@ expireSpawn()
 assert(UP.players[42].phase == 'character_selected')
 assert(UP.players[42].spawnAttemptId == nil)
 assert(UP.players[42].pendingSpawnLocationId == nil)
+assert(spawnFailed[1] == 42 and spawnFailed[2].reason == 'spawn_attempt_expired')
 
 source = 43
 handlers.playerJoining('999')

@@ -16,6 +16,7 @@ shared_scripts {
 server_script 'server/session.lua'
 client_scripts {
     'client/session.lua',
+    'client/presentation.lua',
     'client/ui.lua'
 }
 

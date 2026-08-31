@@ -27,6 +27,14 @@ describe('entry protocol', () => {
     })
     expect(ready.view).toBe('ready')
 
+    const arrivalLoading = reduceEntry(ready, { type: 'characters/selected' })
+    expect(arrivalLoading.view).toBe('arrivalLoading')
+    const arrival = reduceEntry(arrivalLoading, { type: 'locations/loaded', locations: [{ id: 'airport', label: 'Aeroporto' }] })
+    expect(arrival.view).toBe('arrival')
+    const spawning = reduceEntry(reduceEntry(arrival, { type: 'spawn/started' }), { type: 'spawn/requested' })
+    expect(spawning.view).toBe('spawning')
+    expect(reduceEntry(spawning, { version: 1, action: 'spawn/failed' }).view).toBe('arrival')
+
     const error = reduceEntry(open, { type: 'request/failed', error: 'Falha' })
     expect(error.view).toBe('error')
     expect(error.error).toBe('Falha')

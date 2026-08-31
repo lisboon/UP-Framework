@@ -46,6 +46,7 @@ async function previewRequest<T>(event: string, payload: Record<string, unknown>
     previewCharacters = previewCharacters.filter(({ passport }) => passport !== payload.passport)
     return true as T
   }
+  if (event === 'characters/preview') return true as T
   if (event === 'characters/select') return { passport: payload.passport } as T
   throw new Error('request_failed')
 }
@@ -63,5 +64,6 @@ export const characterService = {
   load: () => request<CharacterBootstrap>('characters/load'),
   create: (draft: CharacterDraft) => request<Character>('characters/create', draft),
   delete: (passport: number) => request<boolean>('characters/delete', { passport }),
-  select: (passport: number) => request<{ passport: number }>('characters/select', { passport })
+  select: (passport: number) => request<{ passport: number }>('characters/select', { passport }),
+  preview: (passport: number) => request<boolean>('characters/preview', { passport })
 }

@@ -2,12 +2,14 @@ import { CharacterList } from './CharacterList'
 import { CreateCharacterDialog } from './CreateCharacterDialog'
 import { DeleteCharacterDialog } from './DeleteCharacterDialog'
 import { EntryShell } from './EntryShell'
-import { useEntry } from '../providers/EntryProvider'
+import { ArrivalExperience } from './ArrivalExperience'
+import { useEntry } from '../providers/entryContext'
 
 export function CharacterExperience() {
   const { state, openCreate, retry } = useEntry()
 
   if (state.view === 'hidden') return null
+  if (state.view === 'arrival') return <ArrivalExperience />
   if (state.view !== 'ready') return <EntryShell state={state} onRetry={retry} />
 
   const constraints = state.constraints

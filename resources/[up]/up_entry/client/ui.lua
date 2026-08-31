@@ -1,5 +1,6 @@
 local isOpen = false
 local isReady = false
+local spawnLocations = {}
 
 local function sendUiMessage(action, payload)
     SendNUIMessage({
@@ -105,16 +106,92 @@ RegisterNUICallback('characters/select', function(envelope, reply)
         return
     end
 
-    coreCallback('characters.select', envelope.payload, function(response)
-        if response.ok then SetNuiFocus(false, false) end
+    coreCallback('characters.select', envelope.payload, reply)
+end)
+
+RegisterNUICallback('characters/preview', function(envelope, reply)
+    if not validEnvelope(envelope) then
+        reply({ ok = false, error = 'unsupported_version', version = UPEntryContracts.uiVersion })
+        return
+    end
+
+    local passport = envelope.payload and tonumber(envelope.payload.passport)
+    local ok = UPEntryPresentation and UPEntryPresentation.preview(passport)
+    reply({ ok = ok == true, result = ok == true, error = ok and nil or 'preview_unavailable', version = UPEntryContracts.uiVersion })
+end)
+
+RegisterNUICallback('spawns/load', function(envelope, reply)
+    if not validEnvelope(envelope) then
+        reply({ ok = false, error = 'unsupported_version', version = UPEntryContracts.uiVersion })
+        return
+    end
+
+    coreCallback('spawns.list', {}, function(response)
+        if not response.ok or type(response.result) ~= 'table' then
+            reply(response)
+            return
+        end
+
+        spawnLocations = {}
+        local public = {}
+        for index, location in ipairs(response.result) do
+            if type(location) == 'table' and type(location.id) == 'string' and type(location.label) == 'string' then
+                spawnLocations[location.id] = location
+                public[#public + 1] = { id = location.id, label = location.label }
+            end
+        end
+
+        if public[1] then UPEntryPresentation.previewLocation(spawnLocations[public[1].id], true) end
+        reply({ ok = true, result = public, version = UPEntryContracts.uiVersion })
+    end)
+end)
+
+RegisterNUICallback('spawns/preview', function(envelope, reply)
+    if not validEnvelope(envelope) then
+        reply({ ok = false, error = 'unsupported_version', version = UPEntryContracts.uiVersion })
+        return
+    end
+
+    local location = envelope.payload and spawnLocations[envelope.payload.locationId]
+    local ok = location and UPEntryPresentation.previewLocation(location, false)
+    reply({ ok = ok == true, result = ok == true, error = ok and nil or 'spawn_location_invalid', version = UPEntryContracts.uiVersion })
+end)
+
+RegisterNUICallback('spawns/select', function(envelope, reply)
+    if not validEnvelope(envelope) then
+        reply({ ok = false, error = 'unsupported_version', version = UPEntryContracts.uiVersion })
+        return
+    end
+
+    local locationId = envelope.payload and envelope.payload.locationId
+    local location = spawnLocations[locationId]
+    if not location or not UPEntryPresentation.commitLocation(location) then
+        reply({ ok = false, error = 'spawn_location_invalid', version = UPEntryContracts.uiVersion })
+        return
+    end
+
+    coreCallback('spawns.select', { locationId = locationId }, function(response)
+        if response.ok then
+            SetNuiFocus(false, false)
+        else
+            UPEntryPresentation.resumeLocation()
+        end
         reply(response)
     end)
+end)
+
+RegisterNetEvent(UPEntryContracts.coreEvents.spawnFailed, function(envelope)
+    if type(envelope) ~= 'table' or envelope.version ~= UPEntryContracts.version then return end
+    UPEntryPresentation.resumeLocation()
+    SetNuiFocus(true, true)
+    sendUiMessage('spawn/failed', { reason = envelope.reason })
 end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
     isReady = false
+    spawnLocations = {}
     SetNuiFocus(false, false)
     SendNUIMessage({ version = UPEntryContracts.uiVersion, action = 'entry/close', payload = {} })
 end)

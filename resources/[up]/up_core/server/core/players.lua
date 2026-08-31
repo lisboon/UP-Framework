@@ -140,6 +140,10 @@ function UP.Players.beginSpawn(source, location)
             player.phase = 'character_selected'
             player.spawnAttemptId = nil
             player.pendingSpawnLocationId = nil
+            TriggerClientEvent(UPContracts.events.spawnFailed, source, {
+                version = UPContracts.version,
+                reason = 'spawn_attempt_expired'
+            })
         end
     end)
 

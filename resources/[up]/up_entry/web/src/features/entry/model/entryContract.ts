@@ -1,6 +1,6 @@
 export const UI_PROTOCOL_VERSION = 1 as const
 
-export type EntryAction = 'entry/open' | 'entry/close' | 'entry/error'
+export type EntryAction = 'entry/open' | 'entry/close' | 'entry/error' | 'spawn/failed'
 
 export interface EntryMessage {
   version: number
@@ -16,5 +16,5 @@ export function isEntryMessage(value: unknown): value is EntryMessage {
   const candidate = value as Partial<EntryMessage>
   return candidate.version === UI_PROTOCOL_VERSION
     && candidate.action !== undefined
-    && ['entry/open', 'entry/close', 'entry/error'].includes(candidate.action)
+    && ['entry/open', 'entry/close', 'entry/error', 'spawn/failed'].includes(candidate.action)
 }

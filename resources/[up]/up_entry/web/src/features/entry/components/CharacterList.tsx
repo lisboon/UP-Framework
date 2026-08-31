@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Character } from '../model/entryReducer'
-import { useEntry } from '../providers/EntryProvider'
+import { useEntry } from '../providers/entryContext'
 
 interface CharacterListProps {
   characters: Character[]
@@ -18,12 +18,16 @@ function ageFrom(birthDate: string) {
 }
 
 export function CharacterList({ characters, disabled, hasSlot, onCreate }: CharacterListProps) {
-  const { openDelete, selectCharacter, state } = useEntry()
+  const { openDelete, previewCharacter, selectCharacter, state } = useEntry()
   const [activePassport, setActivePassport] = useState<number | undefined>(characters[0]?.passport)
 
   useEffect(() => {
     if (!characters.some(({ passport }) => passport === activePassport)) setActivePassport(characters[0]?.passport)
   }, [activePassport, characters])
+
+  useEffect(() => {
+    if (activePassport) previewCharacter(activePassport)
+  }, [activePassport, previewCharacter])
 
   const activeCharacter = characters.find(({ passport }) => passport === activePassport)
 

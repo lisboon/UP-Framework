@@ -4,7 +4,15 @@ UPEntryContracts = {
     events = {
         entered = 'up:entry:entered',
         left = 'up:entry:left'
-    }
+    },
+    coreEvents = { spawnFailed = 'up:spawn:failed' }
+}
+
+UPEntryPresentation = {
+    preview = function(passport) return passport == 1000 end,
+    previewLocation = function(location) return location and location.id == 'airport' end,
+    commitLocation = function(location) return location and location.id == 'airport' end,
+    resumeLocation = function() return true end
 }
 
 local netHandlers = {}
@@ -23,6 +31,10 @@ exports = {
                 return { characters = {}, constraints = { maxPerAccount = 3 } }, nil
             end
             if name == 'characters.select' then return { passport = payload.passport }, nil end
+            if name == 'spawns.list' then
+                return {{ id = 'airport', label = 'Airport', coordinates = { x = 1.0, y = 2.0, z = 3.0, heading = 4.0 } }}, nil
+            end
+            if name == 'spawns.select' then return { attemptId = '42:1' }, nil end
             return true, nil
         end
     }
@@ -64,7 +76,31 @@ nuiHandlers['characters/select']({ version = 1, payload = { passport = 1000 } },
     selectReply = response
 end)
 assert(selectReply.ok == true and selectReply.result.passport == 1000)
+assert(focus[1] == true and focus[2] == true)
+
+local previewReply
+nuiHandlers['characters/preview']({ version = 1, payload = { passport = 1000 } }, function(response)
+    previewReply = response
+end)
+assert(previewReply.ok == true and previewReply.result == true)
+
+local locationsReply
+nuiHandlers['spawns/load']({ version = 1, payload = {} }, function(response) locationsReply = response end)
+assert(locationsReply.ok == true and locationsReply.result[1].id == 'airport')
+assert(locationsReply.result[1].coordinates == nil)
+
+local locationPreviewReply
+nuiHandlers['spawns/preview']({ version = 1, payload = { locationId = 'airport' } }, function(response) locationPreviewReply = response end)
+assert(locationPreviewReply.ok == true)
+
+local spawnReply
+nuiHandlers['spawns/select']({ version = 1, payload = { locationId = 'airport' } }, function(response) spawnReply = response end)
+assert(spawnReply.ok == true and spawnReply.result.attemptId == '42:1')
 assert(focus[1] == false and focus[2] == false)
+
+netHandlers[UPEntryContracts.coreEvents.spawnFailed]({ version = 1, reason = 'spawn_attempt_expired' })
+assert(focus[1] == true and focus[2] == true)
+assert(messages[#messages].action == 'spawn/failed')
 
 local unavailableReply
 nuiHandlers['characters/delete']({ version = 1, payload = { passport = -1 } }, function(response)
@@ -73,12 +109,12 @@ end)
 assert(unavailableReply.ok == false and unavailableReply.error == 'core_unavailable')
 
 netHandlers[UPEntryContracts.events.left]({ version = 1, reason = 'entry_completed' })
-assert(messages[2].action == 'entry/close')
-assert(messages[2].payload.reason == 'entry_completed')
+assert(messages[#messages].action == 'entry/close')
+assert(messages[#messages].payload.reason == 'entry_completed')
 
 local invalidReply
 nuiHandlers['entry/ready']({ version = 2 }, function(response) invalidReply = response end)
 assert(invalidReply.ok == false and invalidReply.error == 'unsupported_version')
 
 handlers.onClientResourceStop('up_entry')
-assert(messages[3].action == 'entry/close')
+assert(messages[#messages].action == 'entry/close')

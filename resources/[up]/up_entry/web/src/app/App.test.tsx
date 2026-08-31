@@ -33,7 +33,11 @@ function installNui(initialCharacters: Character[] = []) {
       characters = characters.filter(({ passport }) => passport !== envelope.payload.passport)
       return response(true)
     }
+    if (url.endsWith('/characters/preview')) return response(true)
     if (url.endsWith('/characters/select')) return response({ passport: envelope.payload.passport })
+    if (url.endsWith('/spawns/load')) return response([{ id: 'airport', label: 'Aeroporto Internacional de Los Santos' }])
+    if (url.endsWith('/spawns/preview')) return response(true)
+    if (url.endsWith('/spawns/select')) return response({ attemptId: '42:1' })
     return new Response('', { status: 404 })
   })
 }
@@ -87,7 +91,7 @@ describe('character experience', () => {
     await screen.findByRole('button', { name: 'Criar identidade' })
   })
 
-  it('selects a character and advances to the next presentation state', async () => {
+  it('selects a character, chooses an arrival and requests the authoritative spawn', async () => {
     window.GetParentResourceName = () => 'up_entry'
     installNui([{ passport: 1000, firstName: 'Ana', lastName: 'Silva', birthDate: '2000-02-29', createdAt: 'then', updatedAt: 'then' }])
     render(<App />)
@@ -95,6 +99,12 @@ describe('character experience', () => {
 
     await screen.findByText('Ana')
     fireEvent.click(screen.getByRole('button', { name: /Entrar/ }))
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Onde sua\s*história começa/))
+    expect(screen.getByRole('button', { name: /Aeroporto Internacional/ })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Chegar neste local' }))
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Seu universo\s*aguarda\./))
+    fireEvent(window, new MessageEvent('message', { data: { version: 1, action: 'spawn/failed', payload: { reason: 'spawn_attempt_expired' } } }))
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Onde sua\s*história começa/))
+    expect(screen.getByRole('alert')).toHaveTextContent('A chegada expirou')
   })
 })
