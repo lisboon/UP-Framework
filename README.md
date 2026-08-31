@@ -8,7 +8,8 @@ Foundation / walking skeleton. Not ready for production or sale.
 
 ## Components
 
-- `resources/[up]/up_core`: open FiveM core written in CfxLua.
+- `resources/[up]`: essential first-party runtime resources.
+- `resources/[up-scripts]`: optional first-party gameplay resources.
 - `database/migrations`: forward-compatible MySQL 8 migrations.
 - `cmd/upctl`: cross-platform release and diagnostics CLI written in Go.
 - `infra`: reproducible Linux/MySQL reference environment.
@@ -38,7 +39,7 @@ For manual Windows development, copy `server.local.cfg.example` to `server.local
 
 ## Naming contract
 
-The product is **UP — Universo Paralelo**. First-party resources live under `resources/[up]`, use names such as `up_core`, publish versioned events in the form `up:<domain>:<action>:vN`, store data in `up_<domain>_*` tables, and expose operator tooling through `upctl`.
+The product is **UP — Universo Paralelo**. Essential resources live under `resources/[up]`; optional gameplay lives under `resources/[up-scripts]`. Resources use names such as `up_core`, publish versioned events in the form `up:<domain>:<action>:vN`, store data in `up_<domain>_*` tables, and expose operator tooling through `upctl`.
 
 Start the disposable development database with:
 
