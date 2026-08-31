@@ -2,9 +2,13 @@ import type { EntryState } from '../model/entryReducer'
 
 interface EntryShellProps {
   state: EntryState
+  onRetry?: () => void
 }
 
-export function EntryShell({ state }: EntryShellProps) {
+export function EntryShell({ state, onRetry }: EntryShellProps) {
+  const selected = state.view === 'selected'
+  const failed = state.view === 'error'
+
   return (
     <main className="entry-shell" data-view={state.view} aria-live="polite">
       <div className="atmosphere" aria-hidden="true">
@@ -18,14 +22,15 @@ export function EntryShell({ state }: EntryShellProps) {
       </header>
 
       <section className="entry-copy">
-        <p className="eyebrow"><span>01</span> Travessia em curso</p>
-        <h1>Entre dois<br />mundos.</h1>
+        <p className="eyebrow"><span>01</span> {selected ? 'Identidade confirmada' : 'Travessia em curso'}</p>
+        <h1>{selected ? <>Seu universo<br />aguarda.</> : <>Entre dois<br />mundos.</>}</h1>
         <p className="supporting-copy">Sua identidade está sendo sincronizada com este universo.</p>
 
         <div className="status-line">
           <span className="status-pulse" aria-hidden="true" />
-          <span>{state.view === 'error' ? state.message ?? 'Não foi possível concluir a travessia' : 'Preparando sua chegada'}</span>
+          <span>{failed ? state.error ?? 'Não foi possível concluir a travessia' : selected ? 'Preparando locais de chegada' : 'Preparando suas identidades'}</span>
         </div>
+        {failed && onRetry && <button className="text-action shell-retry" type="button" onClick={onRetry}>Tentar novamente</button>}
       </section>
 
       <footer className="coordinates">

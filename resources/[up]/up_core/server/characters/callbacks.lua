@@ -2,6 +2,10 @@ UP.Callbacks.register('characters.list', function(source)
     return UP.Characters.list(source)
 end)
 
+UP.Callbacks.register('characters.bootstrap', function(source)
+    return UP.Characters.bootstrap(source)
+end)
+
 UP.Callbacks.register('characters.create', function(source, payload)
     return UP.Characters.create(source, payload)
 end)

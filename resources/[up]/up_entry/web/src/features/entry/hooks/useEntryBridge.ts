@@ -1,11 +1,9 @@
-import { useEffect, useReducer } from 'react'
+import { useEffect } from 'react'
 import { nuiRequest } from '../../../shared/services/nuiClient'
 import { isEntryMessage, UI_PROTOCOL_VERSION } from '../model/entryContract'
-import { initialEntryState, reduceEntry } from '../model/entryReducer'
+import type { EntryStateAction } from '../model/entryReducer'
 
-export function useEntryBridge() {
-  const [state, dispatch] = useReducer(reduceEntry, initialEntryState)
-
+export function useEntryBridge(dispatch: React.Dispatch<EntryStateAction>) {
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (isEntryMessage(event.data)) dispatch(event.data)
@@ -19,7 +17,5 @@ export function useEntryBridge() {
     }
 
     return () => window.removeEventListener('message', receive)
-  }, [])
-
-  return state
+  }, [dispatch])
 }
