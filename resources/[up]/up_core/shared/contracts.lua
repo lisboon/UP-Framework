@@ -15,6 +15,9 @@
 ---@field phase 'account_ready'|'character_selected'|'spawning'|'spawned'
 ---@field spawnAttemptId string?
 ---@field spawnLocationId string?
+---@field pendingSpawnLocationId string?
+---@field spawnAttestation table?
+---@field spawnCompletionPending boolean?
 
 ---@class UPCallbackEnvelope
 ---@field version integer

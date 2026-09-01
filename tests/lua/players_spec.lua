@@ -109,26 +109,41 @@ assert(selected[1] == 42 and selected[2].passport == 1000)
 expirePending()
 assert(UP.players[42].accountId == 'account-1')
 
-local attemptId = assert(UP.Players.beginSpawn(42, { id = 'airport' }))
+local attestation = { mode = 'position', provider = 'spawnmanager' }
+local attemptId = assert(UP.Players.beginSpawn(42, { id = 'airport' }, attestation))
 assert(UP.players[42].phase == 'spawning')
+assert(UP.players[42].spawnAttestation == attestation)
+assert(UP.players[42].spawnCompletionPending == false)
 assert(authorized[1] == 42 and authorized[2].attemptId == attemptId)
 
 local invalid, invalidError = UP.Players.completeSpawn(42, 'invalid')
 assert(invalid == nil and invalidError == 'spawn_attempt_invalid')
+assert(UP.Players.beginSpawnAttestation(42, attemptId))
+local duplicate, duplicateError = UP.Players.beginSpawnAttestation(42, attemptId)
+assert(duplicate == nil and duplicateError == 'spawn_completion_pending')
 assert(UP.Players.completeSpawn(42, attemptId))
 assert(UP.players[42].phase == 'spawned')
 assert(UP.players[42].loaded == true)
 assert(UP.players[42].spawnLocationId == 'airport')
+assert(UP.players[42].spawnAttestation == nil)
+assert(UP.players[42].spawnCompletionPending == nil)
 assert(spawned[1] == 42 and ready[2].phase == 'spawned')
 
 UP.players[42].phase = 'character_selected'
-local expiringAttempt = assert(UP.Players.beginSpawn(42, { id = 'airport' }))
+local expiringAttempt = assert(UP.Players.beginSpawn(42, { id = 'airport' }, attestation))
 assert(expiringAttempt ~= attemptId)
 expireSpawn()
 assert(UP.players[42].phase == 'character_selected')
 assert(UP.players[42].spawnAttemptId == nil)
 assert(UP.players[42].pendingSpawnLocationId == nil)
+assert(UP.players[42].spawnAttestation == nil)
+assert(UP.players[42].spawnCompletionPending == nil)
 assert(spawnFailed[1] == 42 and spawnFailed[2].reason == 'spawn_attempt_expired')
+
+local failingAttempt = assert(UP.Players.beginSpawn(42, { id = 'airport' }, attestation))
+assert(UP.Players.failSpawn(42, failingAttempt, 'spawn_position_mismatch'))
+assert(UP.players[42].phase == 'character_selected')
+assert(spawnFailed[2].reason == 'spawn_position_mismatch')
 
 source = 43
 handlers.playerJoining('999')
