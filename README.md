@@ -6,6 +6,8 @@ Clean-room, server-authoritative FiveM roleplay platform. UP is the permanent pr
 
 Foundation / walking skeleton. Not ready for production or sale.
 
+See the [roadmap](ROADMAP.md) for the P3 closure gates, the P4 playable inventory slice, and the linked GitHub issues.
+
 ## Components
 
 - `resources/[up]`: essential first-party runtime resources.
@@ -21,9 +23,13 @@ Foundation / walking skeleton. Not ready for production or sale.
 go test ./...
 go build ./cmd/upctl
 go run ./cmd/upctl version
+go run ./cmd/upctl version --json
 go run ./cmd/upctl doctor --path .
+go run ./cmd/upctl doctor --path . --json
 docker compose -f infra/compose.dev.yml config
 ```
+
+`upctl` uses exit code `0` for success (warnings included), `1` for an operational failure, and `2` for invalid command usage. Release builds can inject metadata with `-ldflags "-X github.com/lisboon/up/internal/cli.Version=<version> -X github.com/lisboon/up/internal/cli.Commit=<commit> -X github.com/lisboon/up/internal/cli.BuildDate=<date>"`.
 
 ## Runtime deployment
 

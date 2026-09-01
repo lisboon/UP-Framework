@@ -2,14 +2,23 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+)
+
+const (
+	statusPass = "pass"
+	statusWarn = "warn"
+	statusFail = "fail"
 )
 
 type lockFile struct {
@@ -23,9 +32,11 @@ type lockFile struct {
 }
 
 type check struct {
-	Name    string
-	OK      bool
-	Message string
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	OK      bool   `json:"-"`
 }
 
 type configFile struct {
@@ -41,12 +52,31 @@ type configFile struct {
 	TxAdminPort     int    `toml:"txadmin_port"`
 }
 
+type doctorSummary struct {
+	Pass int `json:"pass"`
+	Warn int `json:"warn"`
+	Fail int `json:"fail"`
+}
+
+type doctorReport struct {
+	SchemaVersion int           `json:"schemaVersion"`
+	OK            bool          `json:"ok"`
+	Path          string        `json:"path"`
+	Mode          string        `json:"mode"`
+	Checks        []check       `json:"checks"`
+	Summary       doctorSummary `json:"summary"`
+}
+
 func runDoctor(args []string, stdout, stderr io.Writer) error {
 	set := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	set.SetOutput(stderr)
-	path := set.String("path", ".", "installation directory")
+	path := set.String("path", ".", "UP workspace or installation directory")
+	asJSON := set.Bool("json", false, "emit JSON schema v1")
 	if err := set.Parse(args); err != nil {
-		return err
+		return usageError(err)
+	}
+	if set.NArg() != 0 {
+		return usageError(errors.New("doctor does not accept positional arguments"))
 	}
 
 	abs, err := filepath.Abs(*path)
@@ -54,38 +84,62 @@ func runDoctor(args []string, stdout, stderr io.Writer) error {
 		return fmt.Errorf("resolve path: %w", err)
 	}
 
+	config, configResult := loadConfig(filepath.Join(abs, "up.toml"))
+	release := isReleaseEnvironment(config.Environment)
+	mode := detectMode(abs)
 	checks := []check{
-		checkConfig(filepath.Join(abs, "up.toml")),
+		configResult,
 		checkLock(filepath.Join(abs, "up.lock.json")),
+		checkSourceLayout(abs, mode),
+		checkServerData(abs, config.ServerDataPath, release),
+		checkRecipe(filepath.Join(abs, "recipe.yaml"), mode, release),
 		checkCommand("git"),
 		checkCommand("docker"),
 	}
 
-	failed := false
+	report := doctorReport{SchemaVersion: 1, OK: true, Path: abs, Mode: mode, Checks: checks}
 	for _, result := range checks {
-		status := "PASS"
-		if !result.OK {
-			status = "FAIL"
-			failed = true
+		switch result.Status {
+		case statusPass:
+			report.Summary.Pass++
+		case statusWarn:
+			report.Summary.Warn++
+		case statusFail:
+			report.Summary.Fail++
+			report.OK = false
 		}
-		fmt.Fprintf(stdout, "[%s] %s: %s\n", status, result.Name, result.Message)
 	}
 
-	if failed {
-		return fmt.Errorf("doctor found one or more blocking problems")
+	if *asJSON {
+		if err := json.NewEncoder(stdout).Encode(report); err != nil {
+			return fmt.Errorf("encode doctor report: %w", err)
+		}
+	} else {
+		fmt.Fprintf(stdout, "UP Doctor\nPath: %s\nMode: %s\n\n", report.Path, report.Mode)
+		for _, result := range report.Checks {
+			fmt.Fprintf(stdout, "[%s] %s: %s\n", strings.ToUpper(result.Status), result.Name, result.Message)
+		}
+		fmt.Fprintf(stdout, "\nSummary: %d passed, %d warnings, %d failed\n", report.Summary.Pass, report.Summary.Warn, report.Summary.Fail)
+	}
+
+	if !report.OK {
+		return &ExitError{Code: 1, Err: errors.New("doctor found one or more blocking problems")}
 	}
 	return nil
 }
 
-func checkConfig(path string) check {
+func makeCheck(id, name, status, message string) check {
+	return check{ID: id, Name: name, Status: status, Message: message, OK: status != statusFail}
+}
+
+func loadConfig(path string) (configFile, check) {
+	var config configFile
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return check{"configuration", false, err.Error()}
+		return config, makeCheck("configuration", "configuration", statusFail, err.Error())
 	}
-
-	var config configFile
 	if err := toml.Unmarshal(data, &config); err != nil {
-		return check{"configuration", false, err.Error()}
+		return config, makeCheck("configuration", "configuration", statusFail, err.Error())
 	}
 
 	required := []struct {
@@ -100,12 +154,11 @@ func checkConfig(path string) check {
 	}
 	for _, field := range required {
 		if field.value == "" {
-			return check{"configuration", false, "missing " + field.name}
+			return config, makeCheck("configuration", "configuration", statusFail, "missing "+field.name)
 		}
 	}
-
 	if config.SchemaVersion != 1 {
-		return check{"configuration", false, "unsupported schema_version"}
+		return config, makeCheck("configuration", "configuration", statusFail, "unsupported schema_version")
 	}
 	ports := []struct {
 		name  string
@@ -118,39 +171,131 @@ func checkConfig(path string) check {
 	}
 	for _, port := range ports {
 		if port.value < 1 || port.value > 65535 {
-			return check{"configuration", false, "invalid " + port.name}
+			return config, makeCheck("configuration", "configuration", statusFail, "invalid "+port.name)
 		}
 	}
+	return config, makeCheck("configuration", "configuration", statusPass, "schema v1 is valid")
+}
 
-	return check{"configuration", true, "schema v1 is valid"}
+func checkConfig(path string) check {
+	_, result := loadConfig(path)
+	return result
 }
 
 func checkLock(path string) check {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return check{"release lock", false, err.Error()}
+		return makeCheck("release-lock", "release lock", statusFail, err.Error())
 	}
-
 	var lock lockFile
 	if err := json.Unmarshal(data, &lock); err != nil {
-		return check{"release lock", false, err.Error()}
+		return makeCheck("release-lock", "release lock", statusFail, err.Error())
 	}
 	if lock.SchemaVersion != 1 || lock.Release == "" {
-		return check{"release lock", false, "unsupported or incomplete lockfile"}
+		return makeCheck("release-lock", "release lock", statusFail, "unsupported or incomplete lockfile")
 	}
-
 	for _, dependency := range lock.Dependencies {
 		if dependency.Name == "" || dependency.Version == "" || len(dependency.SHA256) != 64 {
-			return check{"release lock", false, "dependency is not immutably pinned"}
+			return makeCheck("release-lock", "release lock", statusFail, "dependency is not immutably pinned")
 		}
 	}
-	return check{"release lock", true, fmt.Sprintf("release %s, %d dependencies", lock.Release, len(lock.Dependencies))}
+	return makeCheck("release-lock", "release lock", statusPass, fmt.Sprintf("release %s, %d dependencies", lock.Release, len(lock.Dependencies)))
+}
+
+func detectMode(root string) string {
+	if exists(filepath.Join(root, "go.mod")) && exists(filepath.Join(root, "recipe.yaml")) {
+		return "workspace"
+	}
+	return "installation"
+}
+
+func checkSourceLayout(root, mode string) check {
+	if mode != "workspace" {
+		return makeCheck("source-layout", "source layout", statusPass, "installation mode; source layout is not required")
+	}
+	required := []string{
+		filepath.Join("resources", "[up]", "up_core", "fxmanifest.lua"),
+		filepath.Join("resources", "[up]", "up_entry", "fxmanifest.lua"),
+		filepath.Join("database", "migrations", "0001_core.sql"),
+		filepath.Join("database", "migrations", "0002_character_lifecycle.sql"),
+	}
+	for _, relative := range required {
+		if !exists(filepath.Join(root, relative)) {
+			return makeCheck("source-layout", "source layout", statusFail, "missing "+relative)
+		}
+	}
+	return makeCheck("source-layout", "source layout", statusPass, "core manifests and migrations are present")
+}
+
+func checkServerData(root, configuredPath string, release bool) check {
+	if configuredPath == "" {
+		return makeCheck("server-data", "server data", statusFail, "server_data_path is not configured")
+	}
+	resolved := configuredPath
+	if !filepath.IsAbs(resolved) {
+		resolved = filepath.Join(root, resolved)
+	}
+	resolved = filepath.Clean(resolved)
+	if exists(resolved) {
+		return makeCheck("server-data", "server data", statusPass, resolved)
+	}
+	status := statusWarn
+	if release {
+		status = statusFail
+	}
+	return makeCheck("server-data", "server data", status, "not found: "+resolved)
+}
+
+var immutableRef = regexp.MustCompile(`^(?:[0-9a-fA-F]{40}|v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$`)
+
+func checkRecipe(path, mode string, release bool) check {
+	if mode != "workspace" {
+		return makeCheck("recipe-pins", "recipe pins", statusPass, "installation mode; recipe is not required")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return makeCheck("recipe-pins", "recipe pins", statusFail, err.Error())
+	}
+	mutable := make([]string, 0)
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		line = strings.TrimPrefix(line, "- ")
+		if !strings.HasPrefix(line, "ref:") {
+			continue
+		}
+		ref := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "ref:")), `"'`)
+		if !immutableRef.MatchString(ref) {
+			mutable = append(mutable, ref)
+		}
+	}
+	if len(mutable) == 0 {
+		return makeCheck("recipe-pins", "recipe pins", statusPass, "all refs are immutable")
+	}
+	status := statusWarn
+	if release {
+		status = statusFail
+	}
+	return makeCheck("recipe-pins", "recipe pins", status, "mutable refs: "+strings.Join(mutable, ", "))
 }
 
 func checkCommand(name string) check {
 	path, err := exec.LookPath(name)
 	if err != nil {
-		return check{name, false, "not found on PATH"}
+		return makeCheck("command-"+name, name, statusWarn, "not found on PATH")
 	}
-	return check{name, true, path}
+	return makeCheck("command-"+name, name, statusPass, path)
+}
+
+func isReleaseEnvironment(environment string) bool {
+	switch strings.ToLower(strings.TrimSpace(environment)) {
+	case "release", "production":
+		return true
+	default:
+		return false
+	}
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
