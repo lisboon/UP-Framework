@@ -2,6 +2,10 @@ UPEntryConfig = {
     bucketBase = 100000,
     bucketLockdownMode = 'strict',
     populationEnabled = false,
+    stateRecovery = {
+        enabled = true,
+        retryDelaysMs = { 0, 250, 750, 1750 }
+    },
     presentation = {
         model = 'mp_m_freemode_01',
         modelTimeoutMs = 5000,

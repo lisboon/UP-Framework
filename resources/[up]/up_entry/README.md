@@ -12,7 +12,9 @@ Server integrations use the stable `IsInEntry(source)` boolean export. The inter
 
 Entry buckets reserve identifiers from `bucketBase + 1` through the configured server source range. The default base `100000` keeps this namespace separate from ordinary gameplay buckets. A disconnected player is removed from the in-memory registry without native resets because FiveM destroys its player routing and state-bag context; connected players are explicitly restored during completion or resource shutdown.
 
-Client synchronization is event-driven. Resource restart triggers a new `clientReady` handshake, but a client that retains replicated `up:entry = true` while missing the corresponding `entered` event has no watchdog yet. Add state-divergence recovery before public release if runtime evidence shows this window can occur; use a state-bag change handler with bounded `SetTimeout` backoff rather than continuous polling. The recovery must remain idempotent and must never create a server session.
+Client synchronization is event-driven. Resource restart triggers a `clientReady` handshake, and the local `up:entry` state-bag handler recovers a missed `entered` event with one bounded sequence at 0, 250, 750, and 1750 ms. Receiving `entered` or `left`, completing spawn, losing the local player, or stopping the resource invalidates pending callbacks. There is no frame or permanent polling, and `clientReady` only asks the server to replay an existing authoritative session.
+
+For development-only failure injection, set `up_entry_test_drop_entered` to the number of initial `entered` events that the server should discard, then restart `up_entry`. Reset it to `0` immediately after the smoke test. The default is disabled, and dropping the notification does not change the authoritative session or replicated state.
 
 The NUI uses a separate versioned protocol. Lua owns entry lifecycle and sends presentation commands; the web layer renders them and cannot authorize character or spawn operations. Install dependencies and build from `web/`; the generated `web/dist` is tracked because a deployed FiveM resource cannot assume a Node.js toolchain.
 
