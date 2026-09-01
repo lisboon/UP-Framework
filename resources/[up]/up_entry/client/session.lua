@@ -1,15 +1,24 @@
 local active = false
 local snapshot
+local gameplayLeaveReasons = {
+    entry_state_reconciled = true,
+    player_spawned = true
+}
 
-local function restoreClient()
+local function restoreClient(reason)
     if not active then return false end
 
     SetNuiFocus(false, false)
     RenderScriptCams(false, false, 0, true, true)
     ClearTimecycleModifier()
 
-    if snapshot then
-        local ped = PlayerPedId()
+    local ped = PlayerPedId()
+    if gameplayLeaveReasons[reason] then
+        DisplayRadar(true)
+        FreezeEntityPosition(ped, false)
+        SetEntityVisible(ped, true, false)
+        SetPlayerInvincible(PlayerId(), false)
+    elseif snapshot then
         DisplayRadar(not snapshot.radarHidden)
         FreezeEntityPosition(ped, snapshot.frozen)
         SetEntityVisible(ped, snapshot.visible, false)
@@ -44,7 +53,7 @@ end)
 
 RegisterNetEvent(UPEntryContracts.events.left, function(envelope)
     if type(envelope) ~= 'table' or envelope.version ~= UPEntryContracts.version then return end
-    restoreClient()
+    restoreClient(envelope.reason)
 end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
@@ -56,5 +65,5 @@ end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() or not active then return end
-    restoreClient()
+    restoreClient('resource_stopped')
 end)

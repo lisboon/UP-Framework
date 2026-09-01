@@ -16,6 +16,7 @@ node_modules/
 !resources/\[up\]/up_entry/web/dist/**
 
 # FiveM runtime state
+/.replxx_history
 txData/
 /artifacts/
 mysql-data/

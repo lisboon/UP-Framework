@@ -11,6 +11,7 @@ local netHandlers = {}
 local handlers = {}
 local calls = {}
 local serverEvent
+local frozenBeforeEntry = true
 
 function RegisterNetEvent(name, handler)
     netHandlers[name] = handler
@@ -27,7 +28,7 @@ function DisplayRadar(visible) calls.radar = visible end
 function PlayerPedId() return 7 end
 function PlayerId() return 3 end
 function IsRadarHidden() return false end
-function IsEntityPositionFrozen() return false end
+function IsEntityPositionFrozen() return frozenBeforeEntry end
 function IsEntityVisible() return true end
 function GetPlayerInvincible() return false end
 function FreezeEntityPosition(_, frozen) calls.frozen = frozen end
@@ -52,7 +53,7 @@ assert(calls.frozen == true)
 assert(calls.visible == false)
 assert(calls.invincible == true)
 
-netHandlers[UPEntryContracts.events.left]({ version = 1 })
+netHandlers[UPEntryContracts.events.left]({ version = 1, reason = 'player_spawned' })
 assert(calls.radar == true)
 assert(calls.frozen == false)
 assert(calls.visible == true)
@@ -60,6 +61,12 @@ assert(calls.invincible == false)
 assert(calls.camera == false)
 assert(calls.timecycleCleared == true)
 
+frozenBeforeEntry = true
 netHandlers[UPEntryContracts.events.entered]({ version = 1 })
 handlers.onClientResourceStop('up_entry')
-assert(calls.frozen == false and calls.visible == true)
+assert(calls.frozen == true and calls.visible == true)
+
+frozenBeforeEntry = true
+netHandlers[UPEntryContracts.events.entered]({ version = 1 })
+netHandlers[UPEntryContracts.events.left]({ version = 1, reason = 'entry_state_reconciled' })
+assert(calls.frozen == false and calls.visible == true and calls.invincible == false)
