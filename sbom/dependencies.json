@@ -24,16 +24,28 @@
       "role": "optional-utility-adapter",
       "source": "https://github.com/overextended/ox_lib",
       "license": "LGPL-3.0",
+      "version": "3.39.0",
+      "commit": "08bac37f3b56d4c3c56d6a0b3749ec3d527de9d6",
+      "sha256": "1df6724dfc1d2d287299ff023a29c9e999eb77832cb918a4f1761d5c18a54501",
+      "release": "https://github.com/overextended/ox_lib/releases/tag/v3.39.0",
+      "artifact": "https://github.com/overextended/ox_lib/releases/download/v3.39.0/ox_lib.zip",
       "bundled": false,
-      "notes": "Optional adapter dependency; never call undocumented internals."
+      "notes": "Evaluated dependency of the optional Ox provider. Install separately; never call undocumented internals from first-party resources."
     },
     {
       "name": "ox_inventory",
       "role": "optional-inventory-adapter",
       "source": "https://github.com/overextended/ox_inventory",
-      "license": "GPL-3.0",
+      "license": "GPL-3.0-or-later",
+      "version": "2.47.9",
+      "commit": "952c128fdff056fd7506d924faa6c07fb80892e9",
+      "sha256": "c072acd028cd8f75f3fab1a594e85c620a4c77cfb5db77a4ea64bcdefd362ae1",
+      "release": "https://github.com/overextended/ox_inventory/releases/tag/v2.47.9",
+      "artifact": "https://github.com/overextended/ox_inventory/releases/download/v2.47.9/ox_inventory.zip",
       "bundled": false,
-      "notes": "Install separately from the official release. Adapter licensing requires legal review."
+      "repositoryBoundary": "separate-gpl-provider",
+      "legalReviewRequired": true,
+      "notes": "Evaluated baseline only. The fork, UP bridge, adapter, notices, modification log and corresponding source stay in a separate GPL repository. Commercial distribution remains blocked on qualified legal review."
     }
   ],
   "prohibited": [
