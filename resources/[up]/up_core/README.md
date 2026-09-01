@@ -15,3 +15,13 @@ Character names intentionally accept Latin-script letters, spaces, apostrophes, 
 After character selection, clients use `spawns.list` and `spawns.select` with a configured `locationId`. The server authorizes one expiring spawn attempt and marks the session as loaded only after `spawnmanager` completes it.
 
 Server resources use the character exports and `ListSpawnLocations` or `SelectSpawnLocation`. Ownership, limits, dates, names, configured spawn locations, and current session state are validated by `up_core`.
+
+## Core restart policy
+
+`up_core` deliberately does not rehydrate connected sessions after a resource restart. Authorization grants, active character ownership, mutation locks, and spawn attempts include transient state that cannot be reconstructed safely from persistence alone. After the database and schema checks complete, every client that remained connected is disconnected with a reconnect instruction, regardless of whether it was in `account_ready`, `character_selected`, `spawning`, or `spawned`. A clean reconnect creates a new authorization and authoritative session.
+
+Operators must treat a core restart as a controlled reconnect event. Other first-party resources must clean up their local routing, camera, NUI, and gameplay state during their own stop handlers; they must not attempt to recreate a core session.
+
+## Spawn attestation
+
+Spawn completion is not accepted solely from a client event. Each location selects a configured provider policy. Position policies retain trusted coordinates server-side, wait for the configured OneSync stabilization interval, and compare the server-observed entity position with a provider-specific tolerance. A mismatch returns the player to character selection and emits a structured diagnostic; it never bans automatically. Interior or cinematic handoffs require an explicit, documented exemption on the location.

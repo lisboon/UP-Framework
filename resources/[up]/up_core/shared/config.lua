@@ -20,10 +20,20 @@ UPConfig = {
     },
     spawn = {
         attemptTimeoutMs = 15000,
+        providers = {
+            spawnmanager = {
+                attestation = {
+                    mode = 'position',
+                    stabilizationMs = 750,
+                    tolerance = 5.0
+                }
+            }
+        },
         locations = {
             {
                 id = 'airport',
                 label = 'Aeroporto Internacional de Los Santos',
+                provider = 'spawnmanager',
                 coordinates = {
                     x = -1037.72,
                     y = -2737.87,

@@ -116,7 +116,7 @@ function UP.Players.activateCharacter(source, character)
     return true, player
 end
 
-function UP.Players.beginSpawn(source, location)
+function UP.Players.beginSpawn(source, location, attestation)
     local player = UP.players[source]
     if not player then return nil, 'player_not_loaded' end
     if player.phase ~= 'character_selected' then return nil, 'spawn_not_available' end
@@ -127,6 +127,8 @@ function UP.Players.beginSpawn(source, location)
     player.phase = 'spawning'
     player.spawnAttemptId = attemptId
     player.pendingSpawnLocationId = location.id
+    player.spawnAttestation = attestation
+    player.spawnCompletionPending = false
     TriggerClientEvent(UPContracts.events.spawnAuthorized, source, {
         attemptId = attemptId,
         location = location
@@ -140,6 +142,8 @@ function UP.Players.beginSpawn(source, location)
             player.phase = 'character_selected'
             player.spawnAttemptId = nil
             player.pendingSpawnLocationId = nil
+            player.spawnAttestation = nil
+            player.spawnCompletionPending = nil
             TriggerClientEvent(UPContracts.events.spawnFailed, source, {
                 version = UPContracts.version,
                 reason = 'spawn_attempt_expired'
@@ -150,18 +154,50 @@ function UP.Players.beginSpawn(source, location)
     return attemptId
 end
 
-function UP.Players.completeSpawn(source, attemptId)
+function UP.Players.getSpawnAttempt(source, attemptId)
     local player = UP.players[source]
     if not player then return nil, 'player_not_loaded' end
     if player.phase ~= 'spawning' or player.spawnAttemptId ~= attemptId then
         return nil, 'spawn_attempt_invalid'
     end
+    return player
+end
+
+function UP.Players.beginSpawnAttestation(source, attemptId)
+    local player, err = UP.Players.getSpawnAttempt(source, attemptId)
+    if not player then return nil, err end
+    if player.spawnCompletionPending then return nil, 'spawn_completion_pending' end
+    player.spawnCompletionPending = true
+    return player
+end
+
+function UP.Players.failSpawn(source, attemptId, reason)
+    local player, err = UP.Players.getSpawnAttempt(source, attemptId)
+    if not player then return nil, err end
+
+    player.phase = 'character_selected'
+    player.spawnAttemptId = nil
+    player.pendingSpawnLocationId = nil
+    player.spawnAttestation = nil
+    player.spawnCompletionPending = nil
+    TriggerClientEvent(UPContracts.events.spawnFailed, source, {
+        version = UPContracts.version,
+        reason = reason or 'spawn_attestation_failed'
+    })
+    return true
+end
+
+function UP.Players.completeSpawn(source, attemptId)
+    local player, err = UP.Players.getSpawnAttempt(source, attemptId)
+    if not player then return nil, err end
 
     player.phase = 'spawned'
     player.loaded = true
     player.spawnAttemptId = nil
     player.spawnLocationId = player.pendingSpawnLocationId
     player.pendingSpawnLocationId = nil
+    player.spawnAttestation = nil
+    player.spawnCompletionPending = nil
     TriggerEvent(UPContracts.events.playerSpawned, source, player)
     TriggerClientEvent(UPContracts.events.characterReady, source, {
         passport = player.passport,
