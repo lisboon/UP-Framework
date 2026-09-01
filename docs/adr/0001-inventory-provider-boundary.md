@@ -1,6 +1,6 @@
 # ADR-0001: Provider-neutral inventory with an isolated Ox provider
 
-- Status: Proposed
+- Status: Prepared
 - Date: 2026-09-01
 - Decision owners: UP maintainers
 - Tracking issue: [#33](https://github.com/lisboon/UP-Framework/issues/33)
