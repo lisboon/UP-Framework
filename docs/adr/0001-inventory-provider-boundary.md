@@ -1,6 +1,6 @@
 # ADR-0001: Provider-neutral inventory with an isolated Ox provider
 
-- Status: Prepared
+- Status: Accepted
 - Date: 2026-09-01
 - Decision owners: UP maintainers
 - Tracking issue: [#33](https://github.com/lisboon/UP-Framework/issues/33)
@@ -49,7 +49,15 @@ The future `UP-Inventory-Ox` repository will contain the maintained Ox fork, `mo
 | `up_inventory_ox` | Separate GPL repository | Implement the provider port, translate UP operations and lifecycle to Ox | Redefine the public UP contract or trust client identity |
 | `ox_inventory` fork | Separate GPL repository | Temporary storage engine, item runtime and UI | Modify UP core tables or represent money as items |
 
-After `up_core`, the normal start order is `oxmysql`, `ox_lib`, `up_inventory`, `ox_inventory`, then `up_inventory_ox`. This lets the facade start safely without a provider and makes the UP contract available before the Ox bridge initializes. Provider registration is server-only and versioned. `up_inventory` fails closed while no single compatible provider is healthy; duplicate or incompatible providers are rejected. Restart/re-registration behavior belongs to #37.
+Runtime ordering follows a dependency graph rather than a single linear chain:
+
+```text
+oxmysql -> up_core -> up_inventory
+oxmysql + ox_lib + up_core -> ox_inventory
+up_inventory + ox_inventory -> up_inventory_ox
+```
+
+The Apache `up_inventory` facade depends on `up_core` only; it does not import or load `ox_lib`. The GPL-side fork and adapter own all Ox dependencies. This lets the facade start safely without a provider and makes the UP contract available before the adapter registers. Provider registration is server-only and versioned. `up_inventory` fails closed while no single compatible provider is healthy; duplicate or incompatible providers are rejected. Restart/re-registration behavior belongs to #37.
 
 ## Contract boundary
 
@@ -57,9 +65,15 @@ Issue #34 will define the exact v1 types and names. This ADR fixes the boundary 
 
 - Callers identify the connected `source`; `up_inventory` resolves the active character UUID and passport from `up_core`.
 - A client never supplies an owner, character UUID, passport, amount authority, target inventory or provider slot.
-- Public mutations require a positive integer amount, a bounded scalar-only metadata envelope, an invoking resource, and a non-empty reason.
-- Public capability covers inventory snapshot/count, capacity check, add, remove, usable registration, use and transfer. Unsupported capabilities fail explicitly.
+- All public inventory reads and mutations require the authoritative character phase to be `spawned`.
+- Public mutations require a positive bounded integer amount, a bounded scalar-only metadata envelope, an invoking resource authorized for that operation, and a non-empty bounded reason.
+- `GetInvokingResource` provides server-resource attribution and policy input, not a sandbox against malicious code installed by the operator. The facade applies an exact resource/operation policy and rejects missing or unauthorized callers.
+- The v1 facade covers inventory snapshot/count, capacity check, add, remove and usable-handler registration. Item-use execution and transfer are defined and implemented in #39; unsupported capabilities fail explicitly until then.
+- The v1 provider port is a storage boundary: health, snapshot, count, capacity check, add and remove. It never executes gameplay callbacks. Later capabilities require an explicit versioned extension.
+- Remove may use an optional provider-neutral metadata match, but never a provider slot or internal item identifier.
 - Public results and events use UP item names and sanitized metadata. Provider-specific slot IDs, internal item identities and callbacks remain private.
+- #34 enforces generic metadata shape and size. #38 owns item definitions and explicit public metadata keys; until that catalog policy exists, client events expose no item metadata.
+- `itemUsed:v1` is reserved and documented by #34 but is not emitted until the authoritative use flow in #39.
 - Money, bank balances and account transfers are excluded. They belong to a future double-entry ledger.
 - Offline mutation, stashes, drops, vehicle storage, weapons, shops and crafting are outside the first playable slice.
 
@@ -69,7 +83,7 @@ No first-party executable source may contain `ox_inventory`, `@ox_inventory`, or
 
 The active character UUID is the storage identity. Passport is a public gameplay identifier and must not be the provider's primary key. Transient FiveM source IDs are never persisted.
 
-The provider may load after `characterActivated`, but public UI and mutations remain blocked until the authoritative phase is `spawned`. It unloads on `playerUnloaded`. Source reuse, reconnect and independent resource restarts must re-resolve the current UUID rather than reuse cached ownership. These transitions are implemented and qualified in #37.
+The provider may load after `characterActivated`, but public reads, UI and mutations remain blocked until the authoritative phase is `spawned`. It unloads on `playerUnloaded`. The facade copies the authoritative identity at the call boundary and re-resolves it after every provider yield before accepting a result. Source reuse, reconnect and independent resource restarts must never reuse cached ownership. Because `up_core` intentionally disconnects players on restart without guaranteeing a per-player unload event, inventory also detects core health actively and fails closed. These transitions are implemented and qualified in #37.
 
 Every mutation is initiated server-side. Client messages express intent only; the server resolves ownership, item definition, allowed metadata, quantity, capacity and target. Grants and externally meaningful mutations use the idempotency and audit model in #35.
 
@@ -171,11 +185,11 @@ Costs and risks:
 
 Before #36 starts:
 
-- [ ] This ADR is accepted through review.
-- [ ] The first-party boundary test is green.
-- [ ] SBOM pins and upstream links are independently verified.
-- [ ] The GPL fork repository and public corresponding-source policy are agreed.
-- [ ] Qualified legal review is tracked as an unresolved commercial-release gate.
+- [x] This ADR is accepted through review.
+- [x] The first-party boundary test is green.
+- [x] SBOM pins and upstream links are independently verified.
+- [x] The separate GPL fork and public corresponding-source policy are agreed.
+- [x] Qualified legal review is tracked as an unresolved commercial-release gate.
 
 Before any provider release:
 
