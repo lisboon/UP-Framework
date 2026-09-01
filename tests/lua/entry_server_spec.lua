@@ -27,6 +27,7 @@ local clientEvent
 local registeredExport
 local entryState
 local connectedPlayers = {}
+local logs = {}
 
 exports = setmetatable({
     up_core = {
@@ -76,6 +77,15 @@ function GetCurrentResourceName()
     return 'up_entry'
 end
 
+function GetConvarInt(name, fallback)
+    assert(name == 'up_entry_test_drop_entered' and fallback == 0)
+    return 1
+end
+
+function print(message)
+    logs[#logs + 1] = message
+end
+
 function Player(source)
     if source ~= 42 then return nil end
     return {
@@ -96,9 +106,16 @@ assert(UPEntry.sessions[42].bucket == 100042)
 assert(buckets[42] == 100042)
 assert(lockdown.bucket == 100042 and lockdown.mode == 'strict')
 assert(population.bucket == 100042 and population.enabled == false)
-assert(clientEvent.name == UPEntryContracts.events.entered)
+assert(clientEvent == nil)
+assert(#logs == 1 and logs[1]:find('dropped entered event', 1, true))
 assert(entryState.key == 'up:entry' and entryState.value == true and entryState.replicated == true)
 assert(registeredExport.handler(42) == true)
+
+-- A retry only synchronizes the existing authoritative session.
+_G.source = 42
+netHandlers[UPEntryContracts.events.clientReady]({ version = 1 })
+_G.source = nil
+assert(clientEvent.name == UPEntryContracts.events.entered)
 
 local existing = assert(UPEntry.enter(42))
 assert(existing == UPEntry.sessions[42])

@@ -7,6 +7,7 @@ local validLockdownModes = {
     relaxed = true,
     strict = true
 }
+local droppedEnteredRemaining = math.max(0, GetConvarInt('up_entry_test_drop_entered', 0))
 
 assert(type(UPEntryConfig.bucketBase) == 'number'
     and UPEntryConfig.bucketBase == math.floor(UPEntryConfig.bucketBase)
@@ -31,6 +32,19 @@ local function setEntryState(source, active)
     if player then player.state:set('up:entry', active, true) end
 end
 
+local function notifyEntered(source)
+    if droppedEnteredRemaining > 0 then
+        droppedEnteredRemaining = droppedEnteredRemaining - 1
+        print(('[up_entry] test hook dropped entered event for source %d'):format(source))
+        return false
+    end
+
+    TriggerClientEvent(UPEntryContracts.events.entered, source, {
+        version = UPEntryContracts.version
+    })
+    return true
+end
+
 function UPEntry.sync(source)
     source = tonumber(source)
     if not source or source < 1 or source ~= math.floor(source) then return nil, 'invalid_source' end
@@ -48,9 +62,7 @@ function UPEntry.sync(source)
     SetRoutingBucketPopulationEnabled(session.bucket, UPEntryConfig.populationEnabled)
     SetPlayerRoutingBucket(source, session.bucket)
     setEntryState(source, true)
-    TriggerClientEvent(UPEntryContracts.events.entered, source, {
-        version = UPEntryContracts.version
-    })
+    notifyEntered(source)
     return session
 end
 
