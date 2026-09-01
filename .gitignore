@@ -21,8 +21,12 @@ txData/
 /artifacts/
 mysql-data/
 
-# Local documentation
-/docs/
+# Local documentation (except versioned architecture and security decisions)
+/docs/*
+!/docs/adr/
+!/docs/adr/*.md
+!/docs/security/
+!/docs/security/*.md
 
 # Logs and backups
 *.log
